@@ -24,6 +24,9 @@ const NAV = [
 
 const EMOJIS = ["👨", "🧔", "👨‍🦱", "😎", "🐯", "🦁", "🐻", "⚡"];
 
+// 배포 확인용 버전 (업데이트 때마다 올림)
+export const APP_VERSION = "v1.4";
+
 function LoginScreen() {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState(EMOJIS[0]);
@@ -41,7 +44,9 @@ function LoginScreen() {
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">👨‍👧‍👦</div>
           <h1 className="text-2xl font-bold">서울아빠들</h1>
-          <p className="text-sm text-slate-500 mt-1">팀 업무 공간에 오신 걸 환영합니다</p>
+          <p className="text-sm text-slate-500 mt-1">
+            팀 업무 공간에 오신 걸 환영합니다 <span className="text-slate-300">{APP_VERSION}</span>
+          </p>
         </div>
         <label className="label">이름 (팀원들에게 보이는 이름)</label>
         <input
@@ -102,7 +107,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen md:flex">
       {/* 모바일 상단바 */}
       <div className="md:hidden sticky top-0 z-20 bg-slate-900 text-white flex items-center justify-between px-4 py-3">
-        <div className="font-bold">👨‍👧‍👦 서울아빠들</div>
+        <div className="font-bold">
+          👨‍👧‍👦 서울아빠들 <span className="text-xs font-normal text-slate-400">{APP_VERSION}</span>
+        </div>
         <button onClick={() => setMenuOpen(!menuOpen)} className="text-xl">
           {menuOpen ? "✕" : "☰"}
         </button>
@@ -117,7 +124,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="hidden md:block px-5 py-6">
           <div className="text-xl font-bold text-white">👨‍👧‍👦 서울아빠들</div>
           <div className="text-xs text-slate-400 mt-1">
-            {isSharedMode ? "팀 공유 모드" : "체험 모드 (내 기기만)"}
+            {isSharedMode ? "팀 공유 모드" : "체험 모드 (내 기기만)"} · {APP_VERSION}
           </div>
         </div>
         <nav className="px-3 pb-4 md:pb-0 space-y-1">
