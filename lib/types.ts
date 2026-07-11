@@ -139,6 +139,17 @@ export interface PushSub {
   created_at: string;
 }
 
+export interface Minute {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD (회의 날짜)
+  attendees: string; // 참석자 (쉼표 구분)
+  content: string; // 회의 내용·결정사항
+  author: string;
+  updated_by: string;
+  created_at: string;
+}
+
 export interface Setting {
   id: string;
   key: string;
@@ -159,6 +170,7 @@ export const TABLES = {
   activities: "activities",
   sales: "sales",
   stock_moves: "stock_moves",
+  minutes: "minutes",
   settings: "settings",
   push_subs: "push_subs",
 } as const;
