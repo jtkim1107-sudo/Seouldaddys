@@ -24,36 +24,28 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
           {user?.emoji} {user?.name}님, 안녕하세요!
         </h1>
-        <p className="text-sm text-slate-500 mt-1">오늘도 화이팅입니다 💪</p>
+        <p className="text-sm text-stone-500 mt-1.5">오늘도 화이팅입니다 💪</p>
       </div>
 
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Link href="/todos" className="card p-4 hover:shadow-md transition-shadow">
-          <div className="text-2xl">📋</div>
-          <div className="text-2xl font-bold mt-1">{myTodos.length}</div>
-          <div className="text-xs text-slate-500">내 할 일 (미완료)</div>
-        </Link>
-        <Link href="/calendar" className="card p-4 hover:shadow-md transition-shadow">
-          <div className="text-2xl">📅</div>
-          <div className="text-2xl font-bold mt-1">
-            {events.filter((e) => e.date === today).length}
-          </div>
-          <div className="text-xs text-slate-500">오늘 일정</div>
-        </Link>
-        <Link href="/products" className="card p-4 hover:shadow-md transition-shadow">
-          <div className="text-2xl">📦</div>
-          <div className="text-2xl font-bold mt-1">{products.length}</div>
-          <div className="text-xs text-slate-500">등록 상품</div>
-        </Link>
-        <Link href="/todos" className="card p-4 hover:shadow-md transition-shadow">
-          <div className="text-2xl">🔥</div>
-          <div className="text-2xl font-bold mt-1">{openTodos.length}</div>
-          <div className="text-xs text-slate-500">팀 전체 할 일</div>
-        </Link>
+        {[
+          { href: "/todos", icon: "📋", chip: "bg-brand-50", value: myTodos.length, label: "내 할 일 (미완료)" },
+          { href: "/calendar", icon: "📅", chip: "bg-sky-50", value: events.filter((e) => e.date === today).length, label: "오늘 일정" },
+          { href: "/products", icon: "📦", chip: "bg-amber-50", value: products.length, label: "등록 상품" },
+          { href: "/todos", icon: "🔥", chip: "bg-rose-50", value: openTodos.length, label: "팀 전체 할 일" },
+        ].map((c, i) => (
+          <Link key={i} href={c.href} className="card p-4 hover:shadow-lift hover:-translate-y-0.5 transition-all">
+            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-xl ${c.chip}`}>
+              {c.icon}
+            </div>
+            <div className="text-2xl font-extrabold mt-2 tracking-tight">{c.value}</div>
+            <div className="text-xs text-stone-500 font-medium">{c.label}</div>
+          </Link>
+        ))}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

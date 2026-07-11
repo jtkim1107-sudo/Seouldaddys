@@ -80,8 +80,10 @@ export default function ChatPage() {
                       {m.author} · {formatDateTime(m.created_at)}
                     </div>
                     <div
-                      className={`inline-block rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words text-left ${
-                        mine ? "bg-brand-500 text-white" : "bg-slate-100"
+                      className={`inline-block rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words text-left shadow-sm ${
+                        mine
+                          ? "bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-br-md"
+                          : "bg-white border border-stone-200/80 rounded-bl-md"
                       }`}
                     >
                       {m.content}

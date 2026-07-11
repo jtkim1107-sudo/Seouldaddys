@@ -35,7 +35,7 @@ const NAV = [
 const EMOJIS = ["👨", "🧔", "👨‍🦱", "😎", "🐯", "🦁", "🐻", "⚡"];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v1.7";
+export const APP_VERSION = "v2.0";
 
 function LoginScreen() {
   const [name, setName] = useState("");
@@ -49,13 +49,15 @@ function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card w-full max-w-sm p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-brand-50 via-[#faf8f5] to-[#faf8f5]">
+      <div className="card w-full max-w-sm p-8 shadow-lift">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-2">👨‍👧‍👦</div>
-          <h1 className="text-2xl font-bold">서울아빠들</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            팀 업무 공간에 오신 걸 환영합니다 <span className="text-slate-300">{APP_VERSION}</span>
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-amber-500 text-3xl shadow-lg shadow-brand-500/30 mb-3">
+            👨‍👧‍👦
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight">서울아빠들</h1>
+          <p className="text-sm text-stone-500 mt-1">
+            팀 업무 공간에 오신 걸 환영합니다 <span className="text-stone-300">{APP_VERSION}</span>
           </p>
         </div>
         <label className="label">이름 (팀원들에게 보이는 이름)</label>
@@ -72,8 +74,10 @@ function LoginScreen() {
             <button
               key={em}
               onClick={() => setEmoji(em)}
-              className={`text-2xl rounded-lg p-1.5 border-2 ${
-                emoji === em ? "border-brand-500 bg-brand-50" : "border-transparent hover:bg-slate-100"
+              className={`text-2xl rounded-xl p-1.5 border-2 transition-all ${
+                emoji === em
+                  ? "border-brand-500 bg-brand-50 scale-110"
+                  : "border-transparent hover:bg-stone-100"
               }`}
             >
               {em}
@@ -122,9 +126,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen md:flex">
       {/* 모바일 상단바 */}
-      <div className="md:hidden sticky top-0 z-20 bg-slate-900 text-white flex items-center justify-between px-4 py-3">
-        <div className="font-bold">
-          👨‍👧‍👦 서울아빠들 <span className="text-xs font-normal text-slate-400">{APP_VERSION}</span>
+      <div className="md:hidden sticky top-0 z-20 bg-ink-950 text-white flex items-center justify-between px-4 py-3">
+        <div className="font-bold flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-amber-500 text-sm">
+            👨‍👧‍👦
+          </span>
+          서울아빠들 <span className="text-xs font-normal text-stone-500">{APP_VERSION}</span>
         </div>
         <button onClick={() => setMenuOpen(!menuOpen)} className="text-xl">
           {menuOpen ? "✕" : "☰"}
@@ -135,40 +142,47 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <aside
         className={`${
           menuOpen ? "block" : "hidden"
-        } md:block w-full md:w-60 bg-slate-900 text-slate-200 md:min-h-screen md:sticky md:top-0 md:h-screen flex-shrink-0`}
+        } md:flex md:flex-col w-full md:w-64 bg-ink-950 text-stone-300 md:min-h-screen md:sticky md:top-0 md:h-screen flex-shrink-0`}
       >
-        <div className="hidden md:block px-5 py-6">
-          <div className="text-xl font-bold text-white">👨‍👧‍👦 서울아빠들</div>
-          <div className="text-xs text-slate-400 mt-1">
-            {isSharedMode ? "팀 공유 모드" : "체험 모드 (내 기기만)"} · {APP_VERSION}
+        <div className="hidden md:flex items-center gap-3 px-5 py-6">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-amber-500 text-xl shadow-lg shadow-brand-500/20">
+            👨‍👧‍👦
+          </span>
+          <div>
+            <div className="text-lg font-extrabold text-white tracking-tight">서울아빠들</div>
+            <div className="text-[11px] text-stone-500">
+              {isSharedMode ? "팀 공유 모드" : "체험 모드 (내 기기만)"} · {APP_VERSION}
+            </div>
           </div>
         </div>
-        <nav className="px-3 pb-4 md:pb-0 space-y-1">
+        <nav className="px-3 pb-4 md:pb-0 space-y-0.5 md:flex-1">
           {NAV.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                  active ? "bg-brand-500 text-white" : "hover:bg-slate-800"
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/25"
+                    : "text-stone-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <span>{item.icon}</span>
+                <span className="text-base">{item.icon}</span>
                 {item.label}
               </Link>
             );
           })}
         </nav>
-        <div className="px-5 py-4 md:absolute md:bottom-0 md:w-60 border-t border-slate-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-xl">{user.emoji}</span>
-              <span className="font-medium text-white">{user.name}</span>
+        <div className="px-4 py-4 border-t border-white/10">
+          <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 text-sm">
+              <span className="text-2xl">{user.emoji}</span>
+              <span className="font-semibold text-white">{user.name}</span>
             </div>
             <button
               onClick={() => setCurrentUser(null)}
-              className="text-xs text-slate-400 hover:text-white"
+              className="text-xs text-stone-500 hover:text-white transition-colors"
             >
               변경
             </button>
