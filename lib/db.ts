@@ -177,6 +177,9 @@ export async function deleteRow(table: TableName, id: string): Promise<void> {
   );
 }
 
+// 같은 테이블을 여러 화면이 동시에 구독해도 충돌하지 않도록 채널 이름에 일련번호를 붙인다
+let channelSeq = 0;
+
 // 테이블 변경 구독
 // 공유 모드: Supabase Realtime + 주기적 폴링(실시간 연결이 막힌 환경 대비) + 창 복귀 시 갱신
 // 체험 모드: 브라우저 이벤트
@@ -193,7 +196,7 @@ export function subscribeTable(table: TableName, onChange: () => void): () => vo
 
   if (isSharedMode) {
     const channel = sb()
-      .channel("realtime:" + table)
+      .channel(`realtime:${table}:${++channelSeq}`)
       .on("postgres_changes", { event: "*", schema: "public", table }, onChange)
       .subscribe();
     cleanups.push(() => {
