@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, getCurrentUser, isSharedMode, supabaseAddress } from "@/lib/db";
 import { TABLES, type Message } from "@/lib/types";
+import { initialOf } from "@/components/Shell";
 
 export default function ChatPage() {
   const { rows: messages, loading, error } = useTable<Message>(TABLES.messages, true);
@@ -22,7 +24,7 @@ export default function ChatPage() {
     try {
       await insertRow<Message>(TABLES.messages, {
         author: user.name,
-        emoji: user.emoji,
+        emoji: "",
         content,
       });
     } catch (e) {
@@ -40,51 +42,52 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
-      <div className="mb-3">
-        <h1 className="text-2xl font-bold">💬 팀 채팅</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {isSharedMode ? "실시간으로 팀원들과 대화하세요" : "체험 모드에서는 이 기기에서만 보입니다"}
+      <div className="mb-4">
+        <h1 className="page-title">팀 채팅</h1>
+        <p className="text-sm text-stone-500 mt-1">
+          {isSharedMode ? "실시간으로 팀원들과 대화하세요." : "체험 모드에서는 이 기기에서만 보입니다."}
         </p>
       </div>
 
       <div className="card flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
-              ⚠️ 메시지를 불러오지 못했습니다.
+            <div className="rounded-[10px] bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              메시지를 불러오지 못했습니다.
               <div className="text-xs mt-1 break-all">원인: {error}</div>
               {isSharedMode && (
-                <div className="text-xs mt-1 break-all text-red-400">
-                  접속 주소: {supabaseAddress}
-                </div>
+                <div className="text-xs mt-1 break-all text-red-400">접속 주소: {supabaseAddress}</div>
               )}
-              <div className="text-xs mt-1 text-red-400">
-                이 화면을 캡처해서 관리자에게 보내주세요.
-              </div>
+              <div className="text-xs mt-1 text-red-400">이 화면을 캡처해서 관리자에게 보내주세요.</div>
             </div>
           )}
           {loading ? (
-            <p className="text-center text-slate-400 text-sm py-10">불러오는 중...</p>
+            <p className="text-center text-stone-400 text-sm py-10">불러오는 중...</p>
           ) : messages.length === 0 ? (
-            <p className="text-center text-slate-400 text-sm py-10">
-              첫 메시지를 보내보세요! 👋
-            </p>
+            <p className="text-center text-stone-400 text-sm py-10">첫 메시지를 보내보세요.</p>
           ) : (
             messages.map((m) => {
               const mine = m.author === user?.name;
               return (
                 <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                  <div className="text-2xl flex-shrink-0">{m.emoji}</div>
+                  {!mine && <span className="avatar h-7 w-7 text-xs mt-4">{initialOf(m.author)}</span>}
                   <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
-                    <div className="text-xs text-slate-400 mb-0.5">
-                      {m.author} · {formatDateTime(m.created_at)}
+                    <div className="text-[11px] font-medium text-stone-400 mb-0.5">
+                      {mine ? (
+                        <span className="num">{formatDateTime(m.created_at)}</span>
+                      ) : (
+                        <>
+                          {m.author} · <span className="num">{formatDateTime(m.created_at)}</span>
+                        </>
+                      )}
                     </div>
                     <div
-                      className={`inline-block rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words text-left shadow-sm ${
+                      className={`inline-block px-3.5 py-2 text-sm whitespace-pre-wrap break-words text-left ${
                         mine
-                          ? "bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-br-md"
-                          : "bg-white border border-stone-200/80 rounded-bl-md"
+                          ? "bg-brand-500 text-white rounded-xl rounded-br-[4px]"
+                          : "bg-white border rounded-xl rounded-bl-[4px]"
                       }`}
+                      style={mine ? undefined : { borderColor: "var(--border-soft)", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
                     >
                       {m.content}
                     </div>
@@ -96,7 +99,7 @@ export default function ChatPage() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="border-t border-slate-100 p-3 flex gap-2">
+        <div className="border-t p-3 flex gap-2" style={{ borderColor: "var(--border-soft)" }}>
           <input
             className="input flex-1"
             placeholder="메시지 입력..."
@@ -106,7 +109,8 @@ export default function ChatPage() {
               if (e.key === "Enter" && !e.nativeEvent.isComposing) send();
             }}
           />
-          <button onClick={send} className="btn-primary px-5">
+          <button onClick={send} className="btn-primary px-4" aria-label="전송">
+            <Send size={16} strokeWidth={1.75} />
             전송
           </button>
         </div>

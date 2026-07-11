@@ -1,18 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ExternalLink, FileSpreadsheet, FileText, Folder, Link as LinkIcon, Plus, Presentation } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, deleteRow, getCurrentUser } from "@/lib/db";
 import { TABLES, type FileLink } from "@/lib/types";
 
 const DEFAULT_CATEGORIES = ["상품자료", "거래처", "정산/세금", "디자인", "기타"];
 
-function iconFor(url: string): string {
-  if (url.includes("docs.google.com/spreadsheets")) return "📊";
-  if (url.includes("docs.google.com/document")) return "📄";
-  if (url.includes("docs.google.com/presentation")) return "📽";
-  if (url.includes("drive.google.com")) return "📂";
-  return "🔗";
+function IconFor({ url }: { url: string }) {
+  const cls = "text-stone-500";
+  if (url.includes("docs.google.com/spreadsheets"))
+    return <FileSpreadsheet size={18} strokeWidth={1.75} className="text-green-600" />;
+  if (url.includes("docs.google.com/document"))
+    return <FileText size={18} strokeWidth={1.75} className="text-blue-600" />;
+  if (url.includes("docs.google.com/presentation"))
+    return <Presentation size={18} strokeWidth={1.75} className="text-amber-600" />;
+  if (url.includes("drive.google.com"))
+    return <Folder size={18} strokeWidth={1.75} className="text-brand-600" />;
+  return <LinkIcon size={18} strokeWidth={1.75} className={cls} />;
 }
 
 export default function FilesPage() {
@@ -58,18 +64,19 @@ export default function FilesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">📁 자료실</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="page-title">자료실</h1>
+          <p className="text-sm text-stone-500 mt-1">
             구글드라이브 폴더·시트·문서 링크를 팀이 함께 쓰도록 모아두는 곳
           </p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          + 자료 등록
+          <Plus size={16} strokeWidth={2} />
+          자료 등록
         </button>
       </div>
 
       {showForm && (
-        <div className="card p-5 border-brand-500 border-2">
+        <div className="card p-5" style={{ borderColor: "#ffab78" }}>
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <label className="label">제목 *</label>
@@ -106,8 +113,10 @@ export default function FilesPage() {
           <button
             key={c}
             onClick={() => setFilter(c)}
-            className={`rounded-full px-3 py-1 text-sm ${
-              filter === c ? "bg-brand-500 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            className={`rounded-full px-3.5 h-8 text-sm font-medium transition-colors duration-[120ms] ${
+              filter === c
+                ? "bg-brand-500 text-white"
+                : "bg-white border border-stone-200 text-stone-600 hover:border-stone-300"
             }`}
           >
             {c}
@@ -128,19 +137,19 @@ export default function FilesPage() {
           {filtered.map((f) => (
             <div key={f.id} className="card p-4 flex flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
-                <a href={f.url} target="_blank" rel="noreferrer" className="font-medium hover:text-brand-500 flex items-center gap-2">
-                  <span className="text-xl">{iconFor(f.url)}</span>
+                <a href={f.url} target="_blank" rel="noreferrer" className="font-medium hover:text-brand-600 flex items-center gap-2 transition-colors">
+                  <IconFor url={f.url} />
                   <span className="break-all">{f.title}</span>
                 </a>
-                <button onClick={() => remove(f)} className="text-xs text-slate-300 hover:text-red-500 flex-shrink-0">
+                <button onClick={() => remove(f)} className="text-xs text-stone-300 hover:text-red-500 flex-shrink-0 transition-colors">
                   삭제
                 </button>
               </div>
-              {f.memo && <p className="text-xs text-slate-500">{f.memo}</p>}
+              {f.memo && <p className="text-xs text-stone-500">{f.memo}</p>}
               <div className="flex items-center justify-between mt-auto pt-1">
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs">{f.category}</span>
-                <span className="text-xs text-slate-400">
-                  {f.author} · {formatDateTime(f.created_at)}
+                <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600">{f.category}</span>
+                <span className="text-xs text-stone-400">
+                  {f.author} · <span className="num">{formatDateTime(f.created_at)}</span>
                 </span>
               </div>
               <a
@@ -149,7 +158,8 @@ export default function FilesPage() {
                 rel="noreferrer"
                 className="btn-ghost justify-center text-brand-600 mt-1"
               >
-                열기 ↗
+                <ExternalLink size={15} strokeWidth={1.75} />
+                열기
               </a>
             </div>
           ))}

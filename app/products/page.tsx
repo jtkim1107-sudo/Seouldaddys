@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { Download, Folder, Plus, Upload } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow } from "@/lib/db";
 import { TABLES, type Product } from "@/lib/types";
@@ -153,17 +154,19 @@ export default function ProductsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">📦 상품마스터</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            총 {products.length}개 상품 · 구글드라이브 링크로 상세자료 연결
+          <h1 className="page-title">상품마스터</h1>
+          <p className="text-sm text-stone-500 mt-1">
+            총 <span className="num">{products.length}</span>개 상품 · 구글드라이브 링크로 상세자료 연결
           </p>
         </div>
         <div className="flex gap-2">
           <button onClick={exportCsv} className="btn-ghost">
-            ⬇ CSV 내보내기
+            <Download size={16} strokeWidth={1.75} />
+            CSV 내보내기
           </button>
           <button onClick={() => fileRef.current?.click()} className="btn-ghost">
-            ⬆ CSV 가져오기
+            <Upload size={16} strokeWidth={1.75} />
+            CSV 가져오기
           </button>
           <input
             ref={fileRef}
@@ -177,7 +180,8 @@ export default function ProductsPage() {
             }}
           />
           <button onClick={openNew} className="btn-primary">
-            + 상품 등록
+            <Plus size={16} strokeWidth={2} />
+            상품 등록
           </button>
         </div>
       </div>
@@ -199,8 +203,8 @@ export default function ProductsPage() {
 
       {/* 등록/수정 폼 */}
       {showForm && (
-        <div className="card p-5 border-brand-500 border-2">
-          <h2 className="font-bold mb-4">{editing ? "상품 수정" : "새 상품 등록"}</h2>
+        <div className="card p-5" style={{ borderColor: "#ffab78" }}>
+          <h2 className="section-title mb-4">{editing ? "상품 수정" : "새 상품 등록"}</h2>
           <div className="grid md:grid-cols-3 gap-3">
             <div>
               <label className="label">상품코드</label>
@@ -299,11 +303,17 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 text-slate-500">{p.supplier || "-"}</td>
                   <td className="px-4 py-3">
                     {p.drive_url ? (
-                      <a href={p.drive_url} target="_blank" rel="noreferrer" className="text-brand-500 hover:underline text-xs">
-                        📂 드라이브
+                      <a
+                        href={p.drive_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-brand-600 hover:underline text-xs font-medium"
+                      >
+                        <Folder size={13} strokeWidth={1.75} />
+                        드라이브
                       </a>
                     ) : (
-                      <span className="text-slate-300 text-xs">-</span>
+                      <span className="text-stone-300 text-xs">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">

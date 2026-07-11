@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useTable, todayStr } from "@/lib/useTable";
 import { insertRow, deleteRow, getCurrentUser } from "@/lib/db";
 import { TABLES, type CalEvent } from "@/lib/types";
@@ -62,19 +63,23 @@ export default function CalendarPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">📅 팀 일정</h1>
-        <p className="text-sm text-slate-500 mt-1">날짜를 누르면 그날 일정을 보고 등록할 수 있어요</p>
+        <h1 className="page-title">팀 일정</h1>
+        <p className="text-sm text-stone-500 mt-1">날짜를 누르면 그날 일정을 보고 등록할 수 있어요.</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
         {/* 달력 */}
         <div className="card p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => move(-1)} className="btn-ghost">←</button>
-            <h2 className="font-bold text-lg">
+            <button onClick={() => move(-1)} className="btn-ghost w-9 px-0" aria-label="이전 달">
+              <ChevronLeft size={18} strokeWidth={1.75} />
+            </button>
+            <h2 className="num section-title text-base">
               {year}년 {month + 1}월
             </h2>
-            <button onClick={() => move(1)} className="btn-ghost">→</button>
+            <button onClick={() => move(1)} className="btn-ghost w-9 px-0" aria-label="다음 달">
+              <ChevronRight size={18} strokeWidth={1.75} />
+            </button>
           </div>
           <div className="grid grid-cols-7 text-center text-xs font-semibold text-slate-500 mb-2">
             {WEEKDAYS.map((w, i) => (
@@ -125,9 +130,13 @@ export default function CalendarPage() {
 
         {/* 선택한 날짜 상세 */}
         <div className="card p-5">
-          <h2 className="font-bold mb-3">
-            {selected.slice(5).replace("-", "월 ")}일 일정
-            {selected === today && <span className="ml-2 text-xs text-brand-500">오늘</span>}
+          <h2 className="section-title mb-3">
+            <span className="num">{selected.slice(5).replace("-", "월 ")}일</span> 일정
+            {selected === today && (
+              <span className="ml-2 rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">
+                오늘
+              </span>
+            )}
           </h2>
           {selectedEvents.length === 0 ? (
             <p className="text-sm text-slate-400 py-3">일정이 없습니다</p>
@@ -141,8 +150,13 @@ export default function CalendarPage() {
                       삭제
                     </button>
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {e.time && <span className="mr-2">🕐 {e.time}</span>}
+                  <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
+                    {e.time && (
+                      <span className="num inline-flex items-center gap-1">
+                        <Clock size={12} strokeWidth={1.75} />
+                        {e.time}
+                      </span>
+                    )}
                     <span>{e.author}</span>
                   </div>
                   {e.memo && <p className="text-xs text-slate-500 mt-1">{e.memo}</p>}

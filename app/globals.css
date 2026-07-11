@@ -4,19 +4,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 서울아빠들 디자인 시스템 Pro 토큰 */
+:root {
+  --bg-page: #faf8f5;
+  --bg-card: #ffffff;
+  --bg-sunken: #f5f5f4;
+  --bg-hover: #fafaf9;
+  --bg-sidebar: #151210;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --bg-sidebar-active: rgba(244, 105, 31, 0.16);
+  --text-1: #292524;
+  --text-2: #78716c;
+  --text-3: #a8a29e;
+  --border-1: #e7e5e4;
+  --border-soft: rgba(231, 229, 228, 0.7);
+  --border-strong: #d6d3d1;
+  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 3px 10px rgba(28, 25, 23, 0.05);
+  --shadow-pop: 0 4px 12px rgba(28, 25, 23, 0.08), 0 12px 32px rgba(28, 25, 23, 0.12);
+  --shadow-brand: 0 2px 8px rgba(244, 105, 31, 0.28);
+  --focus-ring: 0 0 0 3px rgba(244, 105, 31, 0.25);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 body {
-  @apply bg-[#faf8f5] text-stone-800 font-sans antialiased;
+  background: var(--bg-page);
+  color: var(--text-1);
+  @apply font-sans antialiased;
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-soft border border-stone-200/70;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-card);
+    @apply rounded-xl;
+  }
+  .page-title {
+    @apply text-[22px] font-extrabold leading-tight tracking-[-0.4px];
+  }
+  .section-title {
+    @apply text-[15px] font-bold;
   }
   .btn {
-    @apply inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all active:scale-[0.98];
+    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-sm font-semibold whitespace-nowrap transition-colors duration-[120ms];
   }
   .btn-primary {
-    @apply btn bg-brand-500 text-white hover:bg-brand-600 shadow-sm shadow-brand-500/30;
+    @apply btn bg-brand-500 text-white hover:bg-brand-600;
+    box-shadow: var(--shadow-brand);
   }
   .btn-ghost {
     @apply btn bg-stone-100 text-stone-600 hover:bg-stone-200;
@@ -25,9 +59,26 @@ body {
     @apply btn bg-red-50 text-red-600 hover:bg-red-100;
   }
   .input {
-    @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-shadow;
+    background: var(--bg-card);
+    border: 1px solid var(--border-1);
+    @apply w-full h-9 rounded-[10px] px-3.5 text-sm placeholder:text-stone-400 transition-shadow duration-[120ms];
+  }
+  .input:focus {
+    outline: none;
+    border-color: #f4691f;
+    box-shadow: var(--focus-ring);
+  }
+  textarea.input {
+    @apply h-auto py-2.5;
   }
   .label {
-    @apply block text-xs font-bold text-stone-500 mb-1.5;
+    @apply block text-xs font-semibold text-stone-500 mb-1.5;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* 이니셜 아바타 */
+  .avatar {
+    @apply inline-flex items-center justify-center rounded-full bg-stone-100 text-stone-600 font-bold flex-shrink-0;
   }
 }
