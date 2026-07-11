@@ -1,0 +1,173 @@
+"use client";
+
+import { useState } from "react";
+import { useTable, todayStr } from "@/lib/useTable";
+import { insertRow, deleteRow, getCurrentUser } from "@/lib/db";
+import { TABLES, type CalEvent } from "@/lib/types";
+
+function ymd(y: number, m: number, d: number): string {
+  return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+export default function CalendarPage() {
+  const { rows: events } = useTable<CalEvent>(TABLES.events);
+  const today = todayStr();
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth()); // 0-based
+  const [selected, setSelected] = useState(today);
+  const [title, setTitle] = useState("");
+  const [time, setTime] = useState("");
+  const [memo, setMemo] = useState("");
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  function move(delta: number) {
+    const d = new Date(year, month + delta, 1);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
+  }
+
+  const byDate = (date: string) =>
+    events.filter((e) => e.date === date).sort((a, b) => a.time.localeCompare(b.time));
+
+  const selectedEvents = byDate(selected);
+
+  async function add() {
+    if (!title.trim()) return;
+    const user = getCurrentUser();
+    await insertRow<CalEvent>(TABLES.events, {
+      title: title.trim(),
+      date: selected,
+      time,
+      memo: memo.trim(),
+      author: user?.name || "",
+    });
+    setTitle("");
+    setTime("");
+    setMemo("");
+  }
+
+  async function remove(e: CalEvent) {
+    if (confirm(`"${e.title}" 일정을 삭제할까요?`)) await deleteRow(TABLES.events, e.id);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold">📅 팀 일정</h1>
+        <p className="text-sm text-slate-500 mt-1">날짜를 누르면 그날 일정을 보고 등록할 수 있어요</p>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-4">
+        {/* 달력 */}
+        <div className="card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => move(-1)} className="btn-ghost">←</button>
+            <h2 className="font-bold text-lg">
+              {year}년 {month + 1}월
+            </h2>
+            <button onClick={() => move(1)} className="btn-ghost">→</button>
+          </div>
+          <div className="grid grid-cols-7 text-center text-xs font-semibold text-slate-500 mb-2">
+            {WEEKDAYS.map((w, i) => (
+              <div key={w} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>
+                {w}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((d, i) => {
+              if (d === null) return <div key={"e" + i} />;
+              const date = ymd(year, month, d);
+              const dayEvents = byDate(date);
+              const isToday = date === today;
+              const isSelected = date === selected;
+              return (
+                <button
+                  key={date}
+                  onClick={() => setSelected(date)}
+                  className={`min-h-[64px] rounded-lg p-1.5 text-left border text-sm transition-colors ${
+                    isSelected
+                      ? "border-brand-500 bg-brand-50"
+                      : "border-transparent hover:bg-slate-50"
+                  }`}
+                >
+                  <span
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                      isToday ? "bg-brand-500 text-white" : i % 7 === 0 ? "text-red-500" : ""
+                    }`}
+                  >
+                    {d}
+                  </span>
+                  <div className="space-y-0.5 mt-0.5">
+                    {dayEvents.slice(0, 2).map((e) => (
+                      <div key={e.id} className="truncate rounded bg-brand-100 px-1 text-[10px] text-brand-700">
+                        {e.title}
+                      </div>
+                    ))}
+                    {dayEvents.length > 2 && (
+                      <div className="text-[10px] text-slate-400">+{dayEvents.length - 2}</div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 선택한 날짜 상세 */}
+        <div className="card p-5">
+          <h2 className="font-bold mb-3">
+            {selected.slice(5).replace("-", "월 ")}일 일정
+            {selected === today && <span className="ml-2 text-xs text-brand-500">오늘</span>}
+          </h2>
+          {selectedEvents.length === 0 ? (
+            <p className="text-sm text-slate-400 py-3">일정이 없습니다</p>
+          ) : (
+            <ul className="space-y-2 mb-4">
+              {selectedEvents.map((e) => (
+                <li key={e.id} className="rounded-lg bg-slate-50 p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{e.title}</span>
+                    <button onClick={() => remove(e)} className="text-xs text-slate-300 hover:text-red-500">
+                      삭제
+                    </button>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {e.time && <span className="mr-2">🕐 {e.time}</span>}
+                    <span>{e.author}</span>
+                  </div>
+                  {e.memo && <p className="text-xs text-slate-500 mt-1">{e.memo}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="border-t border-slate-100 pt-4 space-y-2">
+            <label className="label">새 일정 추가</label>
+            <input
+              className="input"
+              placeholder="일정 제목"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && add()}
+            />
+            <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <input className="input" placeholder="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} />
+            <button onClick={add} className="btn-primary w-full justify-center">
+              추가
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
