@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, getCurrentUser, isSharedMode, supabaseAddress } from "@/lib/db";
+import { setLastRead } from "@/lib/chatRead";
 import { TABLES, type Message } from "@/lib/types";
 import { initialOf } from "@/components/Shell";
 
@@ -15,6 +16,8 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // 채팅 화면을 보고 있으면 읽음 처리
+    setLastRead(new Date().toISOString());
   }, [messages.length]);
 
   async function send() {

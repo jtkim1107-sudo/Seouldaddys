@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   webpush.setVapidDetails("mailto:team@seouldaddys.app", VAPID_PUBLIC, vapidPrivate);
   const db = createClient(url, key);
 
-  // 오늘의 일정 수집 (반복·기간 일정 포함)
+  // 오늘의 일정(반복·기간 포함) + 오늘 마감/지연 할 일 수집
   const today = kstToday();
   const { data: events, error: evErr } = await db.from("events").select("*");
   if (evErr) return NextResponse.json({ error: evErr.message }, { status: 500 });
@@ -51,26 +51,38 @@ export async function GET(req: NextRequest) {
     .filter((e) => occursOn(e, today))
     .sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
 
+  const { data: todosData } = await db.from("todos").select("*");
+  type TodoRow = { title: string; status: string; assignee: string; due: string };
+  const openTodos = ((todosData || []) as TodoRow[]).filter((t) => t.status !== "done" && t.due);
+  const dueToday = openTodos.filter((t) => t.due === today);
+  const overdue = openTodos.filter((t) => t.due < today);
+
+  const lines: string[] = [
+    ...todays.map((e) => `${e.time ? e.time + " " : ""}${e.title}`),
+    ...dueToday.map((t) => `오늘 마감: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`),
+    ...overdue.map((t) => `기한 지남: ${t.title}${t.assignee ? ` (${t.assignee})` : ""}`),
+  ];
+
+  let title: string;
   let body: string;
   if (isTest) {
+    title = "서울아빠들 · 알림 테스트";
     body =
-      "알림이 잘 연결됐습니다. 매일 아침 8시에 오늘의 일정을 보내드릴게요." +
-      (todays.length ? `\n오늘 일정 ${todays.length}건 있음` : "");
-  } else if (todays.length === 0) {
-    // 일정 없는 날은 조용히 넘어감
-    return NextResponse.json({ ok: true, sent: 0, reason: "오늘 일정 없음" });
+      "알림이 잘 연결됐습니다. 매일 아침 8시에 일정과 마감 할 일을 보내드릴게요." +
+      (lines.length ? `\n오늘 알림거리 ${lines.length}건 있음` : "");
+  } else if (lines.length === 0) {
+    // 알릴 게 없는 날은 조용히 넘어감
+    return NextResponse.json({ ok: true, sent: 0, reason: "오늘 알림 없음" });
   } else {
-    body = todays
-      .map((e) => `${e.time ? e.time + " " : ""}${e.title}`)
-      .join("\n")
-      .slice(0, 500);
+    const parts: string[] = [];
+    if (todays.length) parts.push(`일정 ${todays.length}건`);
+    if (dueToday.length) parts.push(`오늘 마감 ${dueToday.length}건`);
+    if (overdue.length) parts.push(`지연 ${overdue.length}건`);
+    title = "오늘의 브리핑 · " + parts.join(" · ");
+    body = lines.join("\n").slice(0, 500);
   }
 
-  const payload = JSON.stringify({
-    title: isTest ? "서울아빠들 · 알림 테스트" : `오늘의 일정 ${todays.length}건`,
-    body,
-    url: "/calendar",
-  });
+  const payload = JSON.stringify({ title, body, url: "/" });
 
   // 모든 구독 기기에 발송 (만료된 구독은 정리)
   const { data: subs, error: subErr } = await db.from("push_subs").select("*");
@@ -93,5 +105,12 @@ export async function GET(req: NextRequest) {
   );
   const failed = results.filter((r) => r.status === "rejected").length;
 
-  return NextResponse.json({ ok: true, sent, failed, events: todays.length });
+  return NextResponse.json({
+    ok: true,
+    sent,
+    failed,
+    events: todays.length,
+    dueToday: dueToday.length,
+    overdue: overdue.length,
+  });
 }

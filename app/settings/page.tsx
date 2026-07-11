@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
+import { Bell, Download, Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
 import { useTable } from "@/lib/useTable";
-import { insertRow, updateRow, deleteRow, logActivity, isSharedMode, getCurrentUser } from "@/lib/db";
+import {
+  insertRow,
+  updateRow,
+  deleteRow,
+  listRows,
+  logActivity,
+  isSharedMode,
+  getCurrentUser,
+} from "@/lib/db";
 import { pushSupported, getSubscription, enablePush, disablePush } from "@/lib/push";
 import { initialOf } from "@/components/Shell";
 import { TABLES, type Setting, type Member, type Todo, type Message, type Activity } from "@/lib/types";
@@ -45,6 +53,35 @@ export default function SettingsPage() {
       alert((e as Error)?.message || "알림 설정에 실패했습니다.");
     } finally {
       setPushBusy(false);
+    }
+  }
+
+  const [backupBusy, setBackupBusy] = useState(false);
+
+  // 전체 데이터를 JSON 파일로 다운로드 (백업)
+  async function downloadBackup() {
+    setBackupBusy(true);
+    try {
+      const tables = Object.values(TABLES);
+      const data: Record<string, unknown> = {};
+      for (const t of tables) {
+        data[t] = await listRows(t);
+      }
+      const date = new Date().toISOString().slice(0, 10);
+      const blob = new Blob(
+        [JSON.stringify({ app: "서울아빠들", exported_at: new Date().toISOString(), data }, null, 2)],
+        { type: "application/json" }
+      );
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `서울아빠들-백업-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      logActivity("데이터 백업 다운로드");
+    } catch (e) {
+      alert("백업 실패: " + ((e as Error)?.message || ""));
+    } finally {
+      setBackupBusy(false);
     }
   }
 
@@ -235,6 +272,25 @@ export default function SettingsPage() {
             )}
           </>
         )}
+      </div>
+
+      {/* 데이터 백업 */}
+      <div className="card p-5">
+        <h2 className="section-title flex items-center gap-2 mb-1">
+          <Download size={16} strokeWidth={1.75} className="text-stone-500" />
+          데이터 백업
+        </h2>
+        <p className="text-sm text-stone-500 mb-4">
+          상품·거래처·매출·할 일 등 모든 데이터를 파일 하나로 저장합니다. 실수로 지웠거나 문제가
+          생겼을 때를 대비해 <b>일주일에 한 번</b> 정도 받아두세요.
+        </p>
+        <button onClick={downloadBackup} disabled={backupBusy} className="btn-primary">
+          <Download size={16} strokeWidth={1.75} />
+          {backupBusy ? "만드는 중..." : "백업 파일 다운로드"}
+        </button>
+        <p className="text-xs text-stone-400 mt-3">
+          복구가 필요하면 이 파일을 개발 담당(클로드)에게 전달하면 됩니다.
+        </p>
       </div>
 
       {/* 알림 */}

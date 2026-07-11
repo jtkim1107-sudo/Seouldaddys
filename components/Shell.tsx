@@ -28,7 +28,9 @@ import {
   listRows,
   type CurrentUser,
 } from "@/lib/db";
-import type { Setting } from "@/lib/types";
+import { useTable } from "@/lib/useTable";
+import { getLastRead, subscribeLastRead } from "@/lib/chatRead";
+import { TABLES, type Setting, type Message } from "@/lib/types";
 
 const NAV = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
@@ -45,7 +47,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v6.2";
+export const APP_VERSION = "v7.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -133,6 +135,17 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [lastRead, setLastReadState] = useState("");
+
+  // 채팅 안 읽은 메시지 수
+  const { rows: messages } = useTable<Message>(TABLES.messages, true);
+  useEffect(() => {
+    setLastReadState(getLastRead());
+    return subscribeLastRead(() => setLastReadState(getLastRead()));
+  }, []);
+  const unread = user
+    ? messages.filter((m) => m.author !== user.name && (!lastRead || m.created_at > lastRead)).length
+    : 0;
 
   useEffect(() => {
     const u = getCurrentUser();
@@ -166,8 +179,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="font-extrabold tracking-[-0.4px]">
           서울아빠들 <span className="text-[11px] font-medium text-stone-500">{APP_VERSION}</span>
         </div>
-        <button onClick={() => setMenuOpen(!menuOpen)} aria-label="메뉴">
+        <button onClick={() => setMenuOpen(!menuOpen)} aria-label="메뉴" className="relative">
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          {unread > 0 && !menuOpen && (
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+          )}
         </button>
       </div>
 
@@ -206,6 +222,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={18} strokeWidth={1.75} />
                 {label}
+                {href === "/chat" && unread > 0 && (
+                  <span className="num ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
               </Link>
             );
           })}
