@@ -1,0 +1,29 @@
+<!-- @dsCard group="구성요소" -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>채팅 말풍선</title>
+<style>
+  body { font-family:"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; background:#fff; margin:0; padding:24px; max-width:420px; }
+  .row { display:flex; gap:8px; margin-bottom:14px; }
+  .row.mine { flex-direction:row-reverse; }
+  .emoji { font-size:24px; }
+  .meta { font-size:11px; color:#a8a29e; margin-bottom:3px; }
+  .mine .meta { text-align:right; }
+  .bubble { display:inline-block; border-radius:16px; padding:10px 16px; font-size:14px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .theirs .bubble { background:#fff; border:1px solid rgba(231,229,228,.8); border-bottom-left-radius:6px; }
+  .mine .bubble { background:linear-gradient(135deg,#f4691f,#e05a12); color:#fff; border-bottom-right-radius:6px; }
+</style>
+</head>
+<body>
+  <div class="row theirs">
+    <div class="emoji">🧔</div>
+    <div><div class="meta">박아빠 · 7/11 14:02</div><div class="bubble">오늘 신상품 촬영 2시입니다!</div></div>
+  </div>
+  <div class="row mine">
+    <div class="emoji">👨</div>
+    <div><div class="meta">김아빠 · 7/11 14:03</div><div class="bubble">넵 알겠습니다 👍</div></div>
+  </div>
+</body>
+</html>

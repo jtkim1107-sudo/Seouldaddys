@@ -1,0 +1,39 @@
+<!-- @dsCard group="구성요소" -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>카드</title>
+<style>
+  body { font-family:"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; background:#faf8f5; margin:0; padding:24px; display:flex; gap:14px; flex-wrap:wrap; }
+  .card { background:#fff; border:1px solid rgba(231,229,228,.7); border-radius:16px; box-shadow:0 1px 2px rgba(28,25,23,.04), 0 4px 16px rgba(28,25,23,.06); padding:16px; width:180px; }
+  .chipbox { display:inline-flex; width:40px; height:40px; align-items:center; justify-content:center; border-radius:12px; font-size:20px; }
+  .num { font-size:24px; font-weight:800; margin-top:8px; letter-spacing:-0.5px; }
+  .lbl { font-size:12px; color:#78716c; font-weight:500; }
+  .todo { background:#fafaf9; border:1px solid #e7e5e4; border-radius:12px; padding:10px 12px; font-size:14px; width:220px; }
+  .badge { display:inline-block; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:700; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="chipbox" style="background:#fff4ec">📋</span>
+    <div class="num">3</div>
+    <div class="lbl">내 할 일 (미완료)</div>
+  </div>
+  <div class="card">
+    <span class="chipbox" style="background:#eff6ff">📅</span>
+    <div class="num">2</div>
+    <div class="lbl">오늘 일정</div>
+  </div>
+  <div>
+    <div class="todo" style="margin-bottom:10px">
+      <div style="font-weight:600">신상품 상세페이지 작성</div>
+      <div style="margin-top:6px"><span class="badge" style="background:#fef3c7;color:#b45309">진행 중</span> <span style="font-size:11px;color:#a8a29e">👤 김아빠 · ~07/15</span></div>
+    </div>
+    <div class="todo">
+      <div style="font-weight:600;text-decoration:line-through;color:#a8a29e">재고 실사</div>
+      <div style="margin-top:6px"><span class="badge" style="background:#dcfce7;color:#15803d">완료</span></div>
+    </div>
+  </div>
+</body>
+</html>

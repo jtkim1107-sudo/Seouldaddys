@@ -1,0 +1,26 @@
+<!-- @dsCard group="구성요소" -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>버튼</title>
+<style>
+  body { font-family:"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; background:#faf8f5; margin:0; padding:24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .btn { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:12px; padding:9px 16px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; }
+  .primary { background:#f4691f; color:#fff; box-shadow:0 2px 8px rgba(244,105,31,.3); }
+  .primary:hover { background:#e05a12; }
+  .ghost { background:#f5f5f4; color:#57534e; }
+  .danger { background:#fef2f2; color:#dc2626; }
+  .pill { border-radius:999px; background:#fff; border:1px solid #e7e5e4; color:#57534e; padding:7px 14px; font-size:13px; }
+  .pill.on { background:#f4691f; color:#fff; border-color:#f4691f; }
+</style>
+</head>
+<body>
+  <button class="btn primary">+ 상품 등록</button>
+  <button class="btn ghost">⬇ CSV 내보내기</button>
+  <button class="btn danger">삭제</button>
+  <button class="btn pill on">전체</button>
+  <button class="btn pill">상품자료</button>
+  <button class="btn pill">거래처</button>
+</body>
+</html>

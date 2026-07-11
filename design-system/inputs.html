@@ -1,0 +1,23 @@
+<!-- @dsCard group="구성요소" -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>입력</title>
+<style>
+  body { font-family:"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; background:#fff; margin:0; padding:24px; max-width:340px; }
+  label { display:block; font-size:12px; font-weight:700; color:#78716c; margin-bottom:6px; }
+  input, select { width:100%; box-sizing:border-box; border:1px solid #e7e5e4; background:#fff; border-radius:12px; padding:10px 14px; font-size:14px; font-family:inherit; margin-bottom:16px; }
+  input:focus { outline:none; border-color:#f4691f; box-shadow:0 0 0 3px rgba(244,105,31,.25); }
+  .focused { border-color:#f4691f; box-shadow:0 0 0 3px rgba(244,105,31,.25); }
+</style>
+</head>
+<body>
+  <label>상품명 *</label>
+  <input placeholder="예: 프리미엄 티셔츠">
+  <label>포커스 상태</label>
+  <input class="focused" value="캠핑용 접이식 의자">
+  <label>담당자</label>
+  <select><option>담당: 김아빠</option></select>
+</body>
+</html>
