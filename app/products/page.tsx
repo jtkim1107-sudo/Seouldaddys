@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Download, Folder, Plus, Upload } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Product } from "@/lib/types";
 
 type ProductForm = Omit<Product, "id" | "created_at">;
@@ -58,6 +59,7 @@ function parseCsv(text: string): string[][] {
 
 export default function ProductsPage() {
   const { rows: products, loading } = useTable<Product>(TABLES.products);
+  const { isAdmin } = useAdmin();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("전체");
   const [editing, setEditing] = useState<Product | null>(null);
@@ -211,7 +213,7 @@ export default function ProductsPage() {
 
       {/* 등록/수정 폼 */}
       {showForm && (
-        <div className="card p-5" style={{ borderColor: "#ffab78" }}>
+        <div className="card p-5" style={{ borderColor: "#8fbf9c" }}>
           <h2 className="section-title mb-4">{editing ? "상품 수정" : "새 상품 등록"}</h2>
           <div className="grid md:grid-cols-3 gap-3">
             <div>
@@ -326,7 +328,9 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">
                     <button onClick={() => openEdit(p)} className="text-xs text-slate-500 hover:text-brand-500 mr-2">수정</button>
-                    <button onClick={() => remove(p)} className="text-xs text-slate-400 hover:text-red-500">삭제</button>
+                    {isAdmin && (
+                      <button onClick={() => remove(p)} className="text-xs text-slate-400 hover:text-red-500">삭제</button>
+                    )}
                   </td>
                 </tr>
               ))

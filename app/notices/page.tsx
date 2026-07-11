@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Pin, PinOff, Plus } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Notice } from "@/lib/types";
 
 export default function NoticesPage() {
   const { rows: notices, loading } = useTable<Notice>(TABLES.notices);
+  const { isAdmin } = useAdmin();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -54,7 +56,7 @@ export default function NoticesPage() {
       </div>
 
       {showForm && (
-        <div className="card p-5 space-y-3" style={{ borderColor: "#ffab78" }}>
+        <div className="card p-5 space-y-3" style={{ borderColor: "#8fbf9c" }}>
           <input
             className="input"
             placeholder="공지 제목"
@@ -83,7 +85,7 @@ export default function NoticesPage() {
       ) : (
         <div className="space-y-3">
           {sorted.map((n) => (
-            <div key={n.id} className="card p-5" style={n.pinned ? { borderColor: "#ffd0b0", background: "#fffcf9" } : undefined}>
+            <div key={n.id} className="card p-5" style={n.pinned ? { borderColor: "#bfdcc6", background: "#f7faf7" } : undefined}>
               <div className="flex items-start justify-between gap-3">
                 <h2 className="section-title flex items-center gap-1.5">
                   {n.pinned && <Pin size={14} strokeWidth={1.75} className="text-brand-500 flex-shrink-0" />}
@@ -97,9 +99,11 @@ export default function NoticesPage() {
                     {n.pinned ? <PinOff size={13} strokeWidth={1.75} /> : <Pin size={13} strokeWidth={1.75} />}
                     {n.pinned ? "고정 해제" : "고정"}
                   </button>
-                  <button onClick={() => remove(n)} className="text-xs font-medium text-stone-400 hover:text-red-500 transition-colors">
-                    삭제
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => remove(n)} className="text-xs font-medium text-stone-400 hover:text-red-500 transition-colors">
+                      삭제
+                    </button>
+                  )}
                 </div>
               </div>
               {n.content && (

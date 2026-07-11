@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Mail, Phone, Plus } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Partner } from "@/lib/types";
 
 type PartnerForm = Omit<Partner, "id" | "created_at">;
@@ -22,6 +23,7 @@ const DEFAULT_CATEGORIES = ["공급처", "물류/택배", "스튜디오", "기�
 
 export default function PartnersPage() {
   const { rows: partners, loading } = useTable<Partner>(TABLES.partners);
+  const { isAdmin } = useAdmin();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("전체");
   const [showForm, setShowForm] = useState(false);
@@ -105,7 +107,7 @@ export default function PartnersPage() {
       </div>
 
       {showForm && (
-        <div className="card p-5" style={{ borderColor: "#ffab78" }}>
+        <div className="card p-5" style={{ borderColor: "#8fbf9c" }}>
           <h2 className="section-title mb-4">{editing ? "거래처 수정" : "새 거래처 등록"}</h2>
           <div className="grid md:grid-cols-3 gap-3">
             <div>
@@ -168,7 +170,9 @@ export default function PartnersPage() {
                 </div>
                 <div className="flex gap-2 flex-shrink-0 text-xs font-medium">
                   <button onClick={() => openEdit(p)} className="text-stone-400 hover:text-brand-600 transition-colors">수정</button>
-                  <button onClick={() => remove(p)} className="text-stone-400 hover:text-red-500 transition-colors">삭제</button>
+                  {isAdmin && (
+                    <button onClick={() => remove(p)} className="text-stone-400 hover:text-red-500 transition-colors">삭제</button>
+                  )}
                 </div>
               </div>
               <div className="text-sm text-stone-600 space-y-1">

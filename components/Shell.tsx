@@ -47,7 +47,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v4.1";
+export const APP_VERSION = "v5.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -193,7 +193,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-3 rounded-[10px] px-3 h-9 text-sm font-semibold transition-colors duration-[120ms]"
                 style={
                   active
-                    ? { background: "var(--bg-sidebar-active)", color: "#ffab78" }
+                    ? { background: "var(--bg-sidebar-active)", color: "#8fbf9c" }
                     : { color: "#d6d3d1" }
                 }
                 onMouseEnter={(e) => {

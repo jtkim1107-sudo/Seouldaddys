@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Poll } from "@/lib/types";
 
 export default function PollsPage() {
   const { rows: polls, loading } = useTable<Poll>(TABLES.polls);
+  const { isAdmin } = useAdmin();
   const [showForm, setShowForm] = useState(false);
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
@@ -63,7 +65,7 @@ export default function PollsPage() {
       </div>
 
       {showForm && (
-        <div className="card p-5 space-y-3" style={{ borderColor: "#ffab78" }}>
+        <div className="card p-5 space-y-3" style={{ borderColor: "#8fbf9c" }}>
           <div>
             <label className="label">질문</label>
             <input
@@ -141,9 +143,11 @@ export default function PollsPage() {
                     <button onClick={() => toggleClose(p)} className="text-stone-400 hover:text-brand-600 transition-colors">
                       {p.closed ? "다시 열기" : "마감"}
                     </button>
-                    <button onClick={() => remove(p)} className="text-stone-400 hover:text-red-500 transition-colors">
-                      삭제
-                    </button>
+                    {isAdmin && (
+                      <button onClick={() => remove(p)} className="text-stone-400 hover:text-red-500 transition-colors">
+                        삭제
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-3 space-y-2">
@@ -156,7 +160,7 @@ export default function PollsPage() {
                         onClick={() => vote(p, i)}
                         disabled={p.closed}
                         className="relative w-full overflow-hidden rounded-[10px] border p-0 text-left transition-colors duration-[120ms] disabled:cursor-default"
-                        style={{ borderColor: chosen ? "#f4691f" : "var(--border-1)" }}
+                        style={{ borderColor: chosen ? "#2f6f45" : "var(--border-1)" }}
                       >
                         <div
                           className="absolute inset-y-0 left-0 bg-brand-50"

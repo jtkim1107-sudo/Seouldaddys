@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { useTable, todayStr } from "@/lib/useTable";
 import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Sale } from "@/lib/types";
 
 const DEFAULT_CHANNELS = ["스마트스토어", "쿠팡", "자사몰", "오프라인", "기타"];
@@ -14,6 +15,7 @@ function won(n: number): string {
 
 export default function SalesPage() {
   const { rows: sales, loading } = useTable<Sale>(TABLES.sales);
+  const { isAdmin } = useAdmin();
   const [date, setDate] = useState(todayStr());
   const [amount, setAmount] = useState("");
   const [channel, setChannel] = useState(DEFAULT_CHANNELS[0]);
@@ -184,9 +186,11 @@ export default function SalesPage() {
                       <td className="num py-2.5 pr-3 text-right font-semibold">{won(s.amount)}</td>
                       <td className="py-2.5 pr-3 text-stone-500 text-xs">{s.memo || "-"}</td>
                       <td className="py-2.5 text-right">
-                        <button onClick={() => remove(s)} className="text-xs text-stone-300 hover:text-red-500 transition-colors">
-                          삭제
-                        </button>
+                        {isAdmin && (
+                          <button onClick={() => remove(s)} className="text-xs text-stone-300 hover:text-red-500 transition-colors">
+                            삭제
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

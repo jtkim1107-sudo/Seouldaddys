@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Repeat } from "lucide-react";
 import { useTable, todayStr } from "@/lib/useTable";
 import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type CalEvent, type EventRepeat } from "@/lib/types";
 import { occursOn } from "@/lib/events";
 
@@ -15,6 +16,7 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function CalendarPage() {
   const { rows: events } = useTable<CalEvent>(TABLES.events);
+  const { isAdmin } = useAdmin();
   const today = todayStr();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -167,9 +169,11 @@ export default function CalendarPage() {
                         </span>
                       )}
                     </span>
-                    <button onClick={() => remove(e)} className="text-xs text-stone-300 hover:text-red-500">
-                      삭제
-                    </button>
+                    {isAdmin && (
+                      <button onClick={() => remove(e)} className="text-xs text-stone-300 hover:text-red-500">
+                        삭제
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
                     {e.time && (

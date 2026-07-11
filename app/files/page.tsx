@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ExternalLink, FileSpreadsheet, FileText, Folder, Link as LinkIcon, Plus, Presentation } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
 import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type FileLink } from "@/lib/types";
 
 const DEFAULT_CATEGORIES = ["상품자료", "거래처", "정산/세금", "디자인", "기타"];
@@ -23,6 +24,7 @@ function IconFor({ url }: { url: string }) {
 
 export default function FilesPage() {
   const { rows: files, loading } = useTable<FileLink>(TABLES.files);
+  const { isAdmin } = useAdmin();
   const [filter, setFilter] = useState("전체");
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -77,7 +79,7 @@ export default function FilesPage() {
       </div>
 
       {showForm && (
-        <div className="card p-5" style={{ borderColor: "#ffab78" }}>
+        <div className="card p-5" style={{ borderColor: "#8fbf9c" }}>
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <label className="label">제목 *</label>
@@ -142,9 +144,11 @@ export default function FilesPage() {
                   <IconFor url={f.url} />
                   <span className="break-all">{f.title}</span>
                 </a>
-                <button onClick={() => remove(f)} className="text-xs text-stone-300 hover:text-red-500 flex-shrink-0 transition-colors">
-                  삭제
-                </button>
+                {isAdmin && (
+                  <button onClick={() => remove(f)} className="text-xs text-stone-300 hover:text-red-500 flex-shrink-0 transition-colors">
+                    삭제
+                  </button>
+                )}
               </div>
               {f.memo && <p className="text-xs text-stone-500">{f.memo}</p>}
               <div className="flex items-center justify-between mt-auto pt-1">
