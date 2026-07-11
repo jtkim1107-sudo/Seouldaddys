@@ -47,7 +47,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v7.2";
+export const APP_VERSION = "v7.3";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -252,7 +252,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {/* 본문 */}
       <div className="flex-1 min-w-0">
         <ConfigErrorBanner />
-        <main className="p-4 pb-24 md:px-7 md:py-6 md:pb-8 max-w-6xl w-full mx-auto">{children}</main>
+        <main className="p-4 pb-20 md:px-7 md:py-6 md:pb-8 max-w-6xl w-full mx-auto">{children}</main>
       </div>
 
       {/* 모바일 하단 탭바 */}

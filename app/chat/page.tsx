@@ -59,10 +59,10 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12.5rem)] md:h-[calc(100vh-6rem)]">
-      <div className="mb-4">
+    <div className="flex flex-col h-[calc(100dvh-9.25rem)] md:h-[calc(100dvh-4rem)]">
+      <div className="mb-3 md:mb-4">
         <h1 className="page-title">팀 채팅</h1>
-        <p className="text-sm text-stone-500 mt-1">
+        <p className="hidden md:block text-sm text-stone-500 mt-1">
           {isSharedMode ? "실시간으로 팀원들과 대화하세요." : "체험 모드에서는 이 기기에서만 보입니다."}
         </p>
       </div>
