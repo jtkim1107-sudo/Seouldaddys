@@ -30,22 +30,22 @@ import {
 } from "@/lib/db";
 import type { Setting } from "@/lib/types";
 
-const NAV = [
+const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?: string }[] = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
-  { href: "/products", label: "상품마스터", Icon: Package },
+  { href: "/minutes", label: "회의록", Icon: FileText },
+  { href: "/todos", label: "할 일", Icon: ListTodo },
+  { href: "/calendar", label: "일정", Icon: Calendar },
+  { href: "/products", label: "상품마스터", Icon: Package, section: "매출 관리" },
   { href: "/sales", label: "판매 마감", Icon: Banknote },
   { href: "/stock", label: "재고 / 입고", Icon: PackageOpen },
   { href: "/partners", label: "거래처정보", Icon: Building2 },
-  { href: "/calendar", label: "일정", Icon: Calendar },
-  { href: "/todos", label: "할 일", Icon: ListTodo },
-  { href: "/minutes", label: "회의록", Icon: FileText },
-  { href: "/notices", label: "공지사항", Icon: Megaphone },
+  { href: "/notices", label: "공지사항", Icon: Megaphone, section: "기타" },
   { href: "/activity", label: "활동 기록", Icon: History },
   { href: "/settings", label: "설정", Icon: Settings },
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v9.0";
+export const APP_VERSION = "v9.1";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -185,11 +185,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="px-3 pb-4 md:pb-0 space-y-0.5 md:flex-1">
-          {NAV.map(({ href, label, Icon }) => {
+          {NAV.map(({ href, label, Icon, section }) => {
             const active = pathname === href;
             return (
+              <div key={href}>
+                {section && (
+                  <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-widest text-stone-600">
+                    {section}
+                  </div>
+                )}
               <Link
-                key={href}
                 href={href}
                 className="flex items-center gap-3 rounded-[10px] px-3 h-9 text-sm font-semibold transition-colors duration-[120ms]"
                 style={
@@ -207,6 +212,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <Icon size={18} strokeWidth={1.75} />
                 {label}
               </Link>
+              </div>
             );
           })}
         </nav>
@@ -245,7 +251,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       >
         {[
           { href: "/", label: "홈", Icon: LayoutDashboard },
-          { href: "/sales", label: "판매", Icon: Banknote },
+          { href: "/minutes", label: "회의록", Icon: FileText },
           { href: "/todos", label: "할 일", Icon: ListTodo },
           { href: "/calendar", label: "일정", Icon: Calendar },
         ].map(({ href, label, Icon }) => {
