@@ -14,6 +14,7 @@ import {
   Menu,
   MessageCircle,
   Package,
+  PackageOpen,
   Settings,
   Vote,
   X,
@@ -35,10 +36,11 @@ import { TABLES, type Setting, type Message } from "@/lib/types";
 const NAV = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
   { href: "/products", label: "상품마스터", Icon: Package },
+  { href: "/sales", label: "판매 마감", Icon: Banknote },
+  { href: "/stock", label: "재고 / 입고", Icon: PackageOpen },
   { href: "/partners", label: "거래처정보", Icon: Building2 },
   { href: "/calendar", label: "일정", Icon: Calendar },
   { href: "/todos", label: "할 일", Icon: ListTodo },
-  { href: "/sales", label: "매출", Icon: Banknote },
   { href: "/polls", label: "투표", Icon: Vote },
   { href: "/chat", label: "팀 채팅", Icon: MessageCircle },
   { href: "/notices", label: "공지사항", Icon: Megaphone },
@@ -47,7 +49,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v7.3";
+export const APP_VERSION = "v8.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);

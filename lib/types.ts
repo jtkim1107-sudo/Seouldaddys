@@ -104,6 +104,24 @@ export interface Activity {
   created_at: string;
 }
 
+// 재고 수불 기록 (판매/입고/보정) — 저장 시 상품 정보를 스냅샷으로 보관
+export interface StockMove {
+  id: string;
+  date: string; // YYYY-MM-DD
+  type: "sale" | "in" | "adjust";
+  product_id: string;
+  product_name: string;
+  qty: number; // 판매·입고는 양수, 보정은 증감(+/-)
+  unit_price: number; // 판매가 또는 입고 단가
+  unit_cost: number; // 당시 원가 (이익 계산용)
+  amount: number; // qty * unit_price
+  channel: string; // 판매 채널
+  partner: string; // 입고 공급처
+  memo: string;
+  author: string;
+  created_at: string;
+}
+
 export interface Sale {
   id: string;
   date: string; // YYYY-MM-DD
@@ -140,6 +158,7 @@ export const TABLES = {
   polls: "polls",
   activities: "activities",
   sales: "sales",
+  stock_moves: "stock_moves",
   settings: "settings",
   push_subs: "push_subs",
 } as const;

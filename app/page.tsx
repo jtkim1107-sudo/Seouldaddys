@@ -36,9 +36,11 @@ export default function Dashboard() {
   const recentNotices = notices.filter(
     (n) => Date.now() - new Date(n.created_at).getTime() < 48 * 3600 * 1000 && n.author !== user?.name
   );
+  const lowStock = products.filter((p) => (p.stock || 0) <= 5);
   const alerts: { tone: "red" | "amber" | "blue"; text: string; href: string }[] = [
     ...overdue.map((t) => ({ tone: "red" as const, text: `기한이 지났어요: ${t.title} (~${t.due.slice(5)})`, href: "/todos" })),
     ...dueToday.map((t) => ({ tone: "amber" as const, text: `오늘 마감: ${t.title}`, href: "/todos" })),
+    ...lowStock.map((p) => ({ tone: "amber" as const, text: `재입고 필요: ${p.name} (${p.stock || 0}개 남음)`, href: "/stock" })),
     ...recentNotices.map((n) => ({ tone: "blue" as const, text: `새 공지: ${n.title} (${n.author})`, href: "/notices" })),
   ];
   const ALERT_TONE = {
