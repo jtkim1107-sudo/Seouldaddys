@@ -96,45 +96,62 @@ export default function CalendarPage() {
               <ChevronRight size={18} strokeWidth={1.75} />
             </button>
           </div>
-          <div className="grid grid-cols-7 text-center text-xs font-semibold text-slate-500 mb-2">
+          <div className="grid grid-cols-7 text-center text-xs font-semibold text-stone-500 mb-2">
             {WEEKDAYS.map((w, i) => (
               <div key={w} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>
                 {w}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 md:gap-1">
             {cells.map((d, i) => {
               if (d === null) return <div key={"e" + i} />;
               const date = ymd(year, month, d);
               const dayEvents = byDate(date);
               const isToday = date === today;
               const isSelected = date === selected;
+              const weekday = i % 7;
               return (
                 <button
                   key={date}
                   onClick={() => setSelected(date)}
-                  className={`min-h-[64px] rounded-lg p-1.5 text-left border text-sm transition-colors ${
+                  className={`min-h-[46px] md:min-h-[64px] rounded-lg p-0.5 md:p-1.5 border text-sm transition-colors ${
                     isSelected
                       ? "border-brand-500 bg-brand-50"
-                      : "border-transparent hover:bg-slate-50"
+                      : "border-transparent hover:bg-stone-50"
                   }`}
                 >
-                  <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                      isToday ? "bg-brand-500 text-white" : i % 7 === 0 ? "text-red-500" : ""
-                    }`}
-                  >
-                    {d}
-                  </span>
-                  <div className="space-y-0.5 mt-0.5">
+                  {/* 날짜 숫자: 모바일 가운데, PC 왼쪽 — 줄이 항상 맞도록 높이 고정 */}
+                  <div className="flex justify-center md:justify-start">
+                    <span
+                      className={`num inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                        isToday
+                          ? "bg-brand-500 text-white"
+                          : weekday === 0
+                          ? "text-red-500"
+                          : weekday === 6
+                          ? "text-blue-500"
+                          : ""
+                      }`}
+                    >
+                      {d}
+                    </span>
+                  </div>
+                  {/* 모바일: 일정을 점으로 표시 */}
+                  <div className="flex h-2 items-center justify-center gap-0.5 md:hidden">
+                    {dayEvents.slice(0, 3).map((e, j) => (
+                      <span key={e.id + j} className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                    ))}
+                  </div>
+                  {/* PC: 일정 제목 표시 */}
+                  <div className="hidden md:block space-y-0.5 mt-0.5 text-left">
                     {dayEvents.slice(0, 2).map((e) => (
                       <div key={e.id} className="truncate rounded bg-brand-100 px-1 text-[10px] text-brand-700">
                         {e.title}
                       </div>
                     ))}
                     {dayEvents.length > 2 && (
-                      <div className="text-[10px] text-slate-400">+{dayEvents.length - 2}</div>
+                      <div className="text-[10px] text-stone-400">+{dayEvents.length - 2}</div>
                     )}
                   </div>
                 </button>
@@ -154,11 +171,11 @@ export default function CalendarPage() {
             )}
           </h2>
           {selectedEvents.length === 0 ? (
-            <p className="text-sm text-slate-400 py-3">일정이 없습니다</p>
+            <p className="text-sm text-stone-400 py-3">일정이 없습니다.</p>
           ) : (
             <ul className="space-y-2 mb-4">
               {selectedEvents.map((e) => (
-                <li key={e.id} className="rounded-lg bg-slate-50 p-3 text-sm">
+                <li key={e.id} className="rounded-lg bg-stone-50 p-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-medium flex items-center gap-1.5">
                       {e.title}
@@ -184,7 +201,7 @@ export default function CalendarPage() {
                     )}
                     <span>{e.author}</span>
                   </div>
-                  {e.memo && <p className="text-xs text-slate-500 mt-1">{e.memo}</p>}
+                  {e.memo && <p className="text-xs text-stone-500 mt-1">{e.memo}</p>}
                 </li>
               ))}
             </ul>
