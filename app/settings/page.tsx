@@ -138,7 +138,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-xl">
+    <div className="space-y-4 max-w-2xl mx-auto">
       <div>
         <h1 className="page-title">설정</h1>
         <p className="text-sm text-stone-500 mt-1">팀 공간의 관리자와 잠금을 관리합니다.</p>

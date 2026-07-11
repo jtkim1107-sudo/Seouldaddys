@@ -52,7 +52,7 @@ export default function PollsPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title">투표</h1>

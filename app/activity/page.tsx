@@ -8,7 +8,7 @@ export default function ActivityPage() {
   const { rows: activities, loading } = useTable<Activity>(TABLES.activities);
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-3xl mx-auto">
       <div>
         <h1 className="page-title">활동 기록</h1>
         <p className="text-sm text-stone-500 mt-1">누가 언제 무엇을 했는지 최근 순서로 보여줍니다.</p>

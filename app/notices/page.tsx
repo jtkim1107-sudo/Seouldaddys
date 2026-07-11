@@ -43,7 +43,7 @@ export default function NoticesPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">공지사항</h1>

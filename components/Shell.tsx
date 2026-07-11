@@ -45,7 +45,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v6.0";
+export const APP_VERSION = "v6.1";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
