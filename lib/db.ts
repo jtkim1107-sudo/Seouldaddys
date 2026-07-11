@@ -6,8 +6,16 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { TableName } from "./types";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+// 복사-붙여넣기 중 섞여 들어간 공백·보이지 않는 문자·비ASCII 문자를 제거
+// (HTTP 헤더에 그런 문자가 들어가면 모든 요청이 실패한다)
+function cleanEnv(v: string): string {
+  return v.replace(/[^\x21-\x7E]/g, "");
+}
+
+const SUPABASE_URL = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL || "")
+  .replace(/\/rest\/v1\/?$/, "") // 실수로 API 경로까지 붙여넣은 경우 제거
+  .replace(/\/+$/, "");
+const SUPABASE_KEY = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 
 export const isSharedMode = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
