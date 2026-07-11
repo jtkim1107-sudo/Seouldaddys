@@ -114,6 +114,13 @@ export interface Sale {
   created_at: string;
 }
 
+export interface PushSub {
+  id: string;
+  name: string; // 구독한 팀원 이름
+  sub: { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
+  created_at: string;
+}
+
 export interface Setting {
   id: string;
   key: string;
@@ -134,6 +141,7 @@ export const TABLES = {
   activities: "activities",
   sales: "sales",
   settings: "settings",
+  push_subs: "push_subs",
 } as const;
 
 export type TableName = (typeof TABLES)[keyof typeof TABLES];

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, logActivity, isSharedMode, getCurrentUser } from "@/lib/db";
+import { pushSupported, getSubscription, enablePush, disablePush } from "@/lib/push";
 import { initialOf } from "@/components/Shell";
 import { TABLES, type Setting, type Member, type Todo } from "@/lib/types";
 
@@ -13,6 +14,51 @@ export default function SettingsPage() {
   const { rows: allTodos } = useTable<Todo>(TABLES.todos);
   const [pw, setPw] = useState("");
   const [adminPick, setAdminPick] = useState("");
+  // 알림 상태: null=확인 중, false=꺼짐, true=켜짐, "unsupported"=미지원
+  const [pushState, setPushState] = useState<null | boolean | "unsupported">(null);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (!pushSupported()) {
+      setPushState("unsupported");
+      return;
+    }
+    getSubscription()
+      .then((s) => setPushState(Boolean(s)))
+      .catch(() => setPushState(false));
+  }, []);
+
+  async function togglePush() {
+    setPushBusy(true);
+    try {
+      if (pushState === true) {
+        await disablePush();
+        setPushState(false);
+      } else {
+        await enablePush();
+        setPushState(true);
+        alert("알림이 켜졌습니다. '테스트 알림'으로 확인해보세요.");
+      }
+    } catch (e) {
+      alert((e as Error)?.message || "알림 설정에 실패했습니다.");
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function sendTest() {
+    setPushBusy(true);
+    try {
+      const res = await fetch("/api/notify?test=1");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "발송 실패");
+      alert(`테스트 알림을 ${json.sent}개 기기로 보냈습니다. 잠시 후 알림을 확인해보세요.`);
+    } catch (e) {
+      alert("테스트 발송 실패: " + ((e as Error)?.message || ""));
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   const pwRow = settings.find((s) => s.key === "team_password");
   const adminRow = settings.find((s) => s.key === "admin_name");
@@ -149,6 +195,39 @@ export default function SettingsPage() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      {/* 알림 */}
+      <div className="card p-5">
+        <h2 className="section-title flex items-center gap-2 mb-1">
+          <Bell size={16} strokeWidth={1.75} className="text-stone-500" />
+          아침 일정 알림
+        </h2>
+        <p className="text-sm text-stone-500 mb-4">
+          매일 아침 8시, 오늘 일정이 있는 날 폰으로 알림을 보내드립니다. 기기마다 한 번씩
+          켜주세요. (아이폰은 홈 화면에 추가한 앱에서만 알림이 옵니다)
+        </p>
+        {pushState === "unsupported" ? (
+          <p className="text-xs text-amber-700 bg-amber-50 rounded-[10px] p-3">
+            이 브라우저는 알림을 지원하지 않아요. 폰의 크롬(안드로이드) 또는 홈 화면에 추가한
+            앱(아이폰)에서 열어주세요.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={togglePush}
+              disabled={pushState === null || pushBusy}
+              className={pushState === true ? "btn-ghost" : "btn-primary"}
+            >
+              {pushState === null ? "확인 중..." : pushState === true ? "이 기기 알림 끄기" : "이 기기 알림 켜기"}
+            </button>
+            {pushState === true && (
+              <button onClick={sendTest} disabled={pushBusy} className="btn-ghost">
+                테스트 알림 보내기
+              </button>
+            )}
+          </div>
         )}
       </div>
 
