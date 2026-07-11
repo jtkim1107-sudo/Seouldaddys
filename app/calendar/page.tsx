@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Repeat } from "lucide-react";
 import { useTable, todayStr } from "@/lib/useTable";
-import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
 import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type CalEvent, type EventRepeat } from "@/lib/types";
 import { occursOn } from "@/lib/events";
@@ -27,6 +27,8 @@ export default function CalendarPage() {
   const [memo, setMemo] = useState("");
   const [repeat, setRepeat] = useState<EventRepeat>("");
   const [endDate, setEndDate] = useState(""); // 종료일 (여러 날 일정)
+  const [editing, setEditing] = useState<CalEvent | null>(null); // 수정 중인 일정
+  const [startDate, setStartDate] = useState(""); // 수정 시 시작일
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -46,32 +48,55 @@ export default function CalendarPage() {
 
   const selectedEvents = byDate(selected);
 
-  async function add() {
-    if (!title.trim()) return;
-    if (endDate && endDate < selected) {
-      alert("종료일이 시작일보다 빠를 수 없습니다.");
-      return;
-    }
-    const user = getCurrentUser();
-    await insertRow<CalEvent>(TABLES.events, {
-      title: title.trim(),
-      date: selected,
-      end_date: endDate && endDate > selected ? endDate : "",
-      time,
-      memo: memo.trim(),
-      author: user?.name || "",
-      repeat: endDate && endDate > selected ? "" : repeat, // 기간 일정은 반복 없음
-    });
-    logActivity(
-      `일정 "${title.trim()}" 등록 (${selected}${
-        endDate && endDate > selected ? `~${endDate}` : ""
-      }${repeat === "weekly" ? " · 매주" : repeat === "monthly" ? " · 매월" : ""})`
-    );
+  function resetForm() {
     setTitle("");
     setTime("");
     setMemo("");
     setRepeat("");
     setEndDate("");
+    setStartDate("");
+    setEditing(null);
+  }
+
+  function openEdit(e: CalEvent) {
+    setEditing(e);
+    setTitle(e.title);
+    setTime(e.time);
+    setMemo(e.memo);
+    setRepeat(e.repeat || "");
+    setEndDate(e.end_date || "");
+    setStartDate(e.date);
+  }
+
+  async function save() {
+    if (!title.trim()) return;
+    const start = editing ? startDate : selected;
+    if (endDate && endDate < start) {
+      alert("종료일이 시작일보다 빠를 수 없습니다.");
+      return;
+    }
+    const isRange = Boolean(endDate && endDate > start);
+    const data = {
+      title: title.trim(),
+      date: start,
+      end_date: isRange ? endDate : "",
+      time,
+      memo: memo.trim(),
+      repeat: isRange ? ("" as EventRepeat) : repeat, // 기간 일정은 반복 없음
+    };
+    if (editing) {
+      await updateRow<CalEvent>(TABLES.events, editing.id, data);
+      logActivity(`일정 "${data.title}" 수정`);
+    } else {
+      const user = getCurrentUser();
+      await insertRow<CalEvent>(TABLES.events, { ...data, author: user?.name || "" });
+      logActivity(
+        `일정 "${data.title}" 등록 (${start}${isRange ? `~${endDate}` : ""}${
+          repeat === "weekly" ? " · 매주" : repeat === "monthly" ? " · 매월" : ""
+        })`
+      );
+    }
+    resetForm();
   }
 
   async function remove(e: CalEvent) {
@@ -200,11 +225,19 @@ export default function CalendarPage() {
                         </span>
                       )}
                     </span>
-                    {isAdmin && (
-                      <button onClick={() => remove(e)} className="text-xs text-stone-300 hover:text-red-500">
-                        삭제
+                    <span className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => openEdit(e)}
+                        className="text-xs font-medium text-stone-400 hover:text-brand-600 transition-colors"
+                      >
+                        수정
                       </button>
-                    )}
+                      {isAdmin && (
+                        <button onClick={() => remove(e)} className="text-xs text-stone-300 hover:text-red-500">
+                          삭제
+                        </button>
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
                     {e.time && (
@@ -221,35 +254,63 @@ export default function CalendarPage() {
             </ul>
           )}
 
-          <div className="border-t border-slate-100 pt-4 space-y-2">
-            <label className="label">새 일정 추가</label>
+          <div
+            className="border-t pt-4 space-y-2 rounded-b-xl"
+            style={{ borderColor: "var(--border-soft)", background: editing ? "#f7faf7" : undefined }}
+          >
+            <label className="label">
+              {editing ? `"${editing.title}" 일정 수정` : "새 일정 추가"}
+            </label>
             <input
               className="input"
               placeholder="일정 제목"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && add()}
+              onKeyDown={(e) => e.key === "Enter" && save()}
             />
+            {editing && (
+              <div>
+                <label className="label">시작일</label>
+                <input
+                  className="input num"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+            )}
             <input className="input num" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             <div>
               <label className="label">종료일 (전시회처럼 여러 날이면 선택)</label>
               <input
                 className="input num"
                 type="date"
-                min={selected}
+                min={editing ? startDate : selected}
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            <select className="input" value={repeat} onChange={(e) => setRepeat(e.target.value as EventRepeat)} disabled={Boolean(endDate && endDate > selected)}>
+            <select
+              className="input"
+              value={repeat}
+              onChange={(e) => setRepeat(e.target.value as EventRepeat)}
+              disabled={Boolean(endDate && endDate > (editing ? startDate : selected))}
+            >
               <option value="">반복 안 함</option>
               <option value="weekly">매주 (같은 요일)</option>
               <option value="monthly">매월 (같은 날짜)</option>
             </select>
             <input className="input" placeholder="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} />
-            <button onClick={add} className="btn-primary w-full justify-center">
-              추가
-            </button>
+            <div className="flex gap-2">
+              <button onClick={save} className="btn-primary flex-1 justify-center">
+                {editing ? "수정 저장" : "추가"}
+              </button>
+              {editing && (
+                <button onClick={resetForm} className="btn-ghost">
+                  취소
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

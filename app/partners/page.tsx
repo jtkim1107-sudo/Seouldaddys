@@ -108,7 +108,7 @@ export default function PartnersPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="page-title">거래처</h1>
+          <h1 className="page-title">거래처정보</h1>
           <p className="text-sm text-stone-500 mt-1">
             공급처·물류사 연락처와 거래 조건을 한 곳에 정리하세요.
           </p>

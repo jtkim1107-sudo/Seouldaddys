@@ -7,7 +7,6 @@ import {
   Banknote,
   Building2,
   Calendar,
-  FolderOpen,
   History,
   LayoutDashboard,
   ListTodo,
@@ -34,8 +33,7 @@ import type { Setting } from "@/lib/types";
 const NAV = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
   { href: "/products", label: "상품마스터", Icon: Package },
-  { href: "/partners", label: "거래처", Icon: Building2 },
-  { href: "/files", label: "자료실", Icon: FolderOpen },
+  { href: "/partners", label: "거래처정보", Icon: Building2 },
   { href: "/calendar", label: "일정", Icon: Calendar },
   { href: "/todos", label: "할 일", Icon: ListTodo },
   { href: "/sales", label: "매출", Icon: Banknote },
@@ -47,7 +45,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v5.5";
+export const APP_VERSION = "v5.6";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
