@@ -7,6 +7,7 @@ import {
   getCurrentUser,
   setCurrentUser,
   subscribeUser,
+  ensureMember,
   isSharedMode,
   type CurrentUser,
 } from "@/lib/db";
@@ -31,6 +32,7 @@ function LoginScreen() {
     const trimmed = name.trim();
     if (!trimmed) return;
     setCurrentUser({ name: trimmed, emoji });
+    ensureMember(trimmed, emoji); // 팀원 명단에 자동 등록
   }
 
   return (

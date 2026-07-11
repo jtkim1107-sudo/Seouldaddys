@@ -143,6 +143,25 @@ export function subscribeTable(table: TableName, onChange: () => void): () => vo
   };
 }
 
+// ---------- 멤버 등록 ----------
+
+type MemberRow = { id: string; name: string; emoji: string; created_at: string };
+
+// 입장 시 멤버 명단에 자동 등록 (이미 있으면 아이콘만 갱신)
+export async function ensureMember(name: string, emoji: string): Promise<void> {
+  try {
+    const members = await listRows<MemberRow>("members");
+    const existing = members.find((m) => m.name === name);
+    if (!existing) {
+      await insertRow<MemberRow>("members", { name, emoji });
+    } else if (existing.emoji !== emoji) {
+      await updateRow<MemberRow>("members", existing.id, { emoji });
+    }
+  } catch (e) {
+    console.error("멤버 등록 실패", e);
+  }
+}
+
 // ---------- 현재 사용자 (기기별 저장) ----------
 
 export interface CurrentUser {
