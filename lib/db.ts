@@ -33,10 +33,21 @@ if (RAW_URL) {
       ")";
   }
 }
-if (!configError && SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.length < 60) {
-  configError =
-    "설정 오류: NEXT_PUBLIC_SUPABASE_ANON_KEY 값이 너무 짧습니다. 키가 일부만 붙여넣어진 것 같습니다. " +
-    "Supabase의 Settings → API에서 anon public 키를 Copy 버튼으로 복사해 다시 넣어주세요.";
+if (!configError && SUPABASE_URL && SUPABASE_KEY) {
+  // 유효한 키 형식: JWT(anon public, eyJ...로 시작·점 2개 포함) 또는 새 형식(sb_publishable_...)
+  const looksJwt = /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(SUPABASE_KEY);
+  const looksPublishable = /^sb_publishable_[\w-]+$/.test(SUPABASE_KEY);
+  if (SUPABASE_KEY.startsWith("sb_secret_")) {
+    configError =
+      "설정 오류: secret 키가 들어가 있습니다. 이 키는 외부에 노출되면 안 되니 지금 넣은 키를 지우고, " +
+      "Supabase의 Settings → API Keys에서 'publishable' 키(sb_publishable_...)를 복사해 넣어주세요.";
+  } else if (!looksJwt && !looksPublishable) {
+    configError =
+      "설정 오류: NEXT_PUBLIC_SUPABASE_ANON_KEY 값이 완전한 키가 아닙니다 (일부만 붙여넣어진 것 같습니다). " +
+      "Supabase의 Settings → API에서 anon public 키(eyJ로 시작하는 긴 문자열) 또는 " +
+      "publishable 키(sb_publishable_로 시작)를 Copy 버튼으로 복사해 다시 넣어주세요. " +
+      "(현재 저장된 값 앞부분: " + SUPABASE_KEY.slice(0, 12) + "...)";
+  }
 }
 
 export const isSharedMode = Boolean(!configError && SUPABASE_URL && SUPABASE_KEY);

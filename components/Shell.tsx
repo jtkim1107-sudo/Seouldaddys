@@ -35,7 +35,7 @@ const NAV = [
 const EMOJIS = ["👨", "🧔", "👨‍🦱", "😎", "🐯", "🦁", "🐻", "⚡"];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v1.5";
+export const APP_VERSION = "v1.6";
 
 function LoginScreen() {
   const [name, setName] = useState("");
