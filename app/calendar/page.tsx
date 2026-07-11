@@ -123,9 +123,25 @@ export default function CalendarPage() {
             <button onClick={() => move(-1)} className="btn-ghost w-9 px-0" aria-label="이전 달">
               <ChevronLeft size={18} strokeWidth={1.75} />
             </button>
-            <h2 className="num section-title text-base">
-              {year}년 {month + 1}월
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="num section-title text-base">
+                {year}년 {month + 1}월
+              </h2>
+              {(year !== now.getFullYear() || month !== now.getMonth() || selected !== today) && (
+                <button
+                  onClick={() => {
+                    const n = new Date();
+                    setYear(n.getFullYear());
+                    setMonth(n.getMonth());
+                    setSelected(today);
+                  }}
+                  className="rounded-full border px-2.5 h-6 text-[11px] font-semibold text-brand-600 hover:bg-brand-50 transition-colors"
+                  style={{ borderColor: "#bfdcc6" }}
+                >
+                  오늘
+                </button>
+              )}
+            </div>
             <button onClick={() => move(1)} className="btn-ghost w-9 px-0" aria-label="다음 달">
               <ChevronRight size={18} strokeWidth={1.75} />
             </button>

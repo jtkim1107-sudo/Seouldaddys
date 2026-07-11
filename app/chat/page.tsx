@@ -43,8 +43,23 @@ export default function ChatPage() {
     }
   }
 
+  function dayOf(iso: string): string {
+    return new Date(iso).toDateString();
+  }
+
+  function dayLabel(iso: string): string {
+    const d = new Date(iso);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return "오늘";
+    const yest = new Date(now);
+    yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return "어제";
+    const week = ["일", "월", "화", "수", "목", "금", "토"];
+    return `${d.getMonth() + 1}월 ${d.getDate()}일 ${week[d.getDay()]}요일`;
+  }
+
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
+    <div className="flex flex-col h-[calc(100vh-12.5rem)] md:h-[calc(100vh-6rem)]">
       <div className="mb-4">
         <h1 className="page-title">팀 채팅</h1>
         <p className="text-sm text-stone-500 mt-1">
@@ -69,30 +84,56 @@ export default function ChatPage() {
           ) : messages.length === 0 ? (
             <p className="text-center text-stone-400 text-sm py-10">첫 메시지를 보내보세요.</p>
           ) : (
-            messages.map((m) => {
+            messages.map((m, i) => {
               const mine = m.author === user?.name;
+              const prev = messages[i - 1];
+              const newDay = !prev || dayOf(prev.created_at) !== dayOf(m.created_at);
+              // 같은 사람이 5분 안에 연속으로 보낸 메시지는 묶어서 표시
+              const grouped =
+                !newDay &&
+                prev &&
+                prev.author === m.author &&
+                new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000;
               return (
-                <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                  {!mine && <span className="avatar h-7 w-7 text-xs mt-4">{initialOf(m.author)}</span>}
-                  <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
-                    <div className="text-[11px] font-medium text-stone-400 mb-0.5">
-                      {mine ? (
-                        <span className="num">{formatDateTime(m.created_at)}</span>
-                      ) : (
-                        <>
-                          {m.author} · <span className="num">{formatDateTime(m.created_at)}</span>
-                        </>
-                      )}
+                <div key={m.id}>
+                  {newDay && (
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="h-px flex-1" style={{ background: "var(--border-soft)" }} />
+                      <span className="text-[11px] font-semibold text-stone-400">
+                        {dayLabel(m.created_at)}
+                      </span>
+                      <div className="h-px flex-1" style={{ background: "var(--border-soft)" }} />
                     </div>
-                    <div
-                      className={`inline-block px-3.5 py-2 text-sm whitespace-pre-wrap break-words text-left ${
-                        mine
-                          ? "bg-brand-500 text-white rounded-xl rounded-br-[4px]"
-                          : "bg-white border rounded-xl rounded-bl-[4px]"
-                      }`}
-                      style={mine ? undefined : { borderColor: "var(--border-soft)", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
-                    >
-                      {m.content}
+                  )}
+                  <div className={`flex gap-2 ${mine ? "flex-row-reverse" : ""} ${grouped ? "mt-1" : "mt-2"}`}>
+                    {!mine &&
+                      (grouped ? (
+                        <span className="w-7 flex-shrink-0" />
+                      ) : (
+                        <span className="avatar h-7 w-7 text-xs mt-4">{initialOf(m.author)}</span>
+                      ))}
+                    <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
+                      {!grouped && (
+                        <div className="text-[11px] font-medium text-stone-400 mb-0.5">
+                          {mine ? (
+                            <span className="num">{formatDateTime(m.created_at)}</span>
+                          ) : (
+                            <>
+                              {m.author} · <span className="num">{formatDateTime(m.created_at)}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <div
+                        className={`inline-block px-3.5 py-2 text-sm whitespace-pre-wrap break-words text-left ${
+                          mine
+                            ? "bg-brand-500 text-white rounded-xl rounded-br-[4px]"
+                            : "bg-white border rounded-xl rounded-bl-[4px]"
+                        }`}
+                        style={mine ? undefined : { borderColor: "var(--border-soft)", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
+                      >
+                        {m.content}
+                      </div>
                     </div>
                   </div>
                 </div>

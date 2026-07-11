@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable, formatDateTime } from "@/lib/useTable";
+import { useTable, formatRelative } from "@/lib/useTable";
 import { TABLES, type Activity } from "@/lib/types";
 import { initialOf } from "@/components/Shell";
 
@@ -29,7 +29,7 @@ export default function ActivityPage() {
                 <span className="font-semibold">{a.user}</span>
                 <span className="text-stone-600"> — {a.action}</span>
               </div>
-              <span className="num text-xs text-stone-400 flex-shrink-0">{formatDateTime(a.created_at)}</span>
+              <span className="num text-xs text-stone-400 flex-shrink-0">{formatRelative(a.created_at)}</span>
             </div>
           ))}
         </div>

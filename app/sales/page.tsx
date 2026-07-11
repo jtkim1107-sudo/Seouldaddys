@@ -94,7 +94,11 @@ export default function SalesPage() {
           inputMode="numeric"
           placeholder="금액(원)"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => {
+            // 숫자만 남기고 천 단위 콤마 자동 표시
+            const digits = e.target.value.replace(/[^\d]/g, "");
+            setAmount(digits ? Number(digits).toLocaleString("ko-KR") : "");
+          }}
           onKeyDown={(e) => e.key === "Enter" && add()}
         />
         <select className="input w-auto" value={channel} onChange={(e) => setChannel(e.target.value)}>

@@ -47,7 +47,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v7.1";
+export const APP_VERSION = "v7.2";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -252,8 +252,52 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {/* 본문 */}
       <div className="flex-1 min-w-0">
         <ConfigErrorBanner />
-        <main className="p-4 md:px-7 md:py-6 max-w-6xl w-full mx-auto">{children}</main>
+        <main className="p-4 pb-24 md:px-7 md:py-6 md:pb-8 max-w-6xl w-full mx-auto">{children}</main>
       </div>
+
+      {/* 모바일 하단 탭바 */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t"
+        style={{
+          background: "var(--bg-card)",
+          borderColor: "var(--border-soft)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        {[
+          { href: "/", label: "홈", Icon: LayoutDashboard },
+          { href: "/todos", label: "할 일", Icon: ListTodo },
+          { href: "/calendar", label: "일정", Icon: Calendar },
+          { href: "/chat", label: "채팅", Icon: MessageCircle },
+        ].map(({ href, label, Icon }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold ${
+                active ? "text-brand-600" : "text-stone-400"
+              }`}
+            >
+              <Icon size={20} strokeWidth={active ? 2 : 1.75} />
+              {label}
+              {href === "/chat" && unread > 0 && (
+                <span className="absolute top-1 right-1/2 translate-x-4 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => {
+            setMenuOpen(true);
+            window.scrollTo(0, 0);
+          }}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold text-stone-400"
+        >
+          <Menu size={20} strokeWidth={1.75} />
+          전체
+        </button>
+      </nav>
     </div>
   );
 }
