@@ -44,11 +44,12 @@ export default function TodosPage() {
 
   const me = getCurrentUser();
 
-  // 팀원 명단: 등록된 멤버 + 할 일에 담당자로 등장하는 이름 + 나
+  // 팀원 명단: 등록된 멤버 + 미완료 할 일의 담당자 + 나
+  // (내보낸 팀원은 완료된 할 일만 남아 있으면 보드에 나타나지 않는다)
   const names = Array.from(
     new Set([
       ...members.map((m) => m.name),
-      ...todos.map((t) => t.assignee).filter(Boolean),
+      ...todos.filter((t) => t.status !== "done").map((t) => t.assignee).filter(Boolean),
       me?.name || "",
     ])
   ).filter(Boolean);
@@ -227,7 +228,9 @@ export default function TodosPage() {
           {/* 담당자 미지정 */}
           {(() => {
             const unassigned = sortForList(
-              todos.filter((t) => !t.assignee || !names.includes(t.assignee))
+              todos.filter(
+                (t) => (!t.assignee || !names.includes(t.assignee)) && t.status !== "done"
+              )
             );
             if (unassigned.length === 0) return null;
             return (

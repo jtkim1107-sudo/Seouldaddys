@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, ShieldCheck } from "lucide-react";
+import { Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, logActivity, isSharedMode, getCurrentUser } from "@/lib/db";
-import { TABLES, type Setting, type Member } from "@/lib/types";
+import { initialOf } from "@/components/Shell";
+import { TABLES, type Setting, type Member, type Todo } from "@/lib/types";
 
 export default function SettingsPage() {
   const { rows: settings, loading } = useTable<Setting>(TABLES.settings);
   const { rows: members } = useTable<Member>(TABLES.members, true);
+  const { rows: allTodos } = useTable<Todo>(TABLES.todos);
   const [pw, setPw] = useState("");
   const [adminPick, setAdminPick] = useState("");
 
@@ -38,6 +40,35 @@ export default function SettingsPage() {
     if (!confirm("관리자 지정을 해제할까요? 해제하면 다시 모두가 삭제할 수 있게 됩니다.")) return;
     await deleteRow(TABLES.settings, adminRow.id);
     logActivity("관리자 지정 해제");
+  }
+
+  // 팀원 내보내기 (퇴사 등) — 미완료 할 일은 담당자 미지정으로 이동
+  async function removeMember(m: Member) {
+    if (adminRow && m.name === adminRow.value) {
+      alert("관리자는 내보낼 수 없습니다. 먼저 다른 팀원에게 관리자를 넘겨주세요.");
+      return;
+    }
+    if (m.name === me?.name) {
+      alert("본인은 내보낼 수 없습니다.");
+      return;
+    }
+    const open = allTodos.filter((t) => t.assignee === m.name && t.status !== "done");
+    if (
+      !confirm(
+        `"${m.name}"님을 팀에서 내보낼까요?\n` +
+          `미완료 할 일 ${open.length}건은 '담당자 미지정'으로 이동하고,\n` +
+          `채팅·활동 기록 등 과거 기록은 그대로 남습니다.`
+      )
+    )
+      return;
+    for (const t of open) {
+      await updateRow<Todo>(TABLES.todos, t.id, { assignee: "" });
+    }
+    await deleteRow(TABLES.members, m.id);
+    logActivity(`팀원 "${m.name}" 내보내기`);
+    alert(
+      `내보냈습니다.\n같은 이름으로 다시 들어오는 걸 막으려면 아래 '비밀번호 잠금'에서 팀 비밀번호를 바꿔주세요.`
+    );
   }
 
   async function savePassword() {
@@ -118,6 +149,59 @@ export default function SettingsPage() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      {/* 팀원 관리 */}
+      <div className="card p-5">
+        <h2 className="section-title flex items-center gap-2 mb-1">
+          <Users size={16} strokeWidth={1.75} className="text-stone-500" />
+          팀원 관리
+        </h2>
+        <p className="text-sm text-stone-500 mb-4">
+          퇴사 등으로 나간 팀원을 내보낼 수 있습니다. 내보내면 그 사람의 미완료 할 일은
+          &lsquo;담당자 미지정&rsquo;으로 이동합니다.
+        </p>
+        {members.length === 0 ? (
+          <p className="text-sm text-stone-400">등록된 팀원이 없습니다.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {members.map((m) => {
+              const isAdminMember = adminRow?.value === m.name;
+              return (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-2.5 rounded-[10px] border px-3 py-2"
+                  style={{ borderColor: "var(--border-soft)" }}
+                >
+                  <span className="avatar h-7 w-7 text-xs">{initialOf(m.name)}</span>
+                  <span className="text-sm font-semibold">{m.name}</span>
+                  {isAdminMember && (
+                    <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">
+                      관리자
+                    </span>
+                  )}
+                  {m.name === me?.name && (
+                    <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[11px] font-semibold text-stone-500">
+                      나
+                    </span>
+                  )}
+                  {canManage && !isAdminMember && m.name !== me?.name && (
+                    <button
+                      onClick={() => removeMember(m)}
+                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
+                    >
+                      <UserMinus size={13} strokeWidth={1.75} />
+                      내보내기
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {!canManage && (
+          <p className="text-xs text-stone-400 mt-3">내보내기는 관리자({adminRow?.value})만 할 수 있습니다.</p>
         )}
       </div>
 
