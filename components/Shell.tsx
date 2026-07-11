@@ -9,8 +9,18 @@ import {
   subscribeUser,
   ensureMember,
   isSharedMode,
+  configError,
   type CurrentUser,
 } from "@/lib/db";
+
+function ConfigErrorBanner() {
+  if (!configError) return null;
+  return (
+    <div className="bg-red-50 border-b border-red-200 px-4 py-3 text-sm text-red-700">
+      ⚠️ {configError}
+    </div>
+  );
+}
 
 const NAV = [
   { href: "/", label: "대시보드", icon: "📊" },
@@ -25,7 +35,7 @@ const NAV = [
 const EMOJIS = ["👨", "🧔", "👨‍🦱", "😎", "🐯", "🦁", "🐻", "⚡"];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v1.4";
+export const APP_VERSION = "v1.5";
 
 function LoginScreen() {
   const [name, setName] = useState("");
@@ -101,7 +111,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   if (!ready) return null;
-  if (!user) return <LoginScreen />;
+  if (!user)
+    return (
+      <>
+        <ConfigErrorBanner />
+        <LoginScreen />
+      </>
+    );
 
   return (
     <div className="min-h-screen md:flex">
@@ -161,7 +177,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* 본문 */}
-      <main className="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto">{children}</main>
+      <div className="flex-1 min-w-0">
+        <ConfigErrorBanner />
+        <main className="p-4 md:p-8 max-w-6xl w-full mx-auto">{children}</main>
+      </div>
     </div>
   );
 }

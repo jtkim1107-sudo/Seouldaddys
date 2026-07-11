@@ -12,12 +12,34 @@ function cleanEnv(v: string): string {
   return v.replace(/[^\x21-\x7E]/g, "");
 }
 
-const SUPABASE_URL = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL || "")
+const RAW_URL = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL || "")
   .replace(/\/rest\/v1\/?$/, "") // 실수로 API 경로까지 붙여넣은 경우 제거
   .replace(/\/+$/, "");
 const SUPABASE_KEY = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 
-export const isSharedMode = Boolean(SUPABASE_URL && SUPABASE_KEY);
+// 설정값 검증 — 잘못된 값이 있어도 앱이 죽지 않고 화면에 원인을 표시한다
+export let configError: string | null = null;
+
+let SUPABASE_URL = "";
+if (RAW_URL) {
+  try {
+    const parsed = new URL(RAW_URL.startsWith("http") ? RAW_URL : "https://" + RAW_URL);
+    SUPABASE_URL = parsed.origin;
+  } catch {
+    configError =
+      "설정 오류: NEXT_PUBLIC_SUPABASE_URL 값이 인터넷 주소 형식이 아닙니다. " +
+      "Vercel의 Environment Variables에서 값을 확인해주세요. (현재 값: " +
+      RAW_URL.slice(0, 60) +
+      ")";
+  }
+}
+if (!configError && SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.length < 60) {
+  configError =
+    "설정 오류: NEXT_PUBLIC_SUPABASE_ANON_KEY 값이 너무 짧습니다. 키가 일부만 붙여넣어진 것 같습니다. " +
+    "Supabase의 Settings → API에서 anon public 키를 Copy 버튼으로 복사해 다시 넣어주세요.";
+}
+
+export const isSharedMode = Boolean(!configError && SUPABASE_URL && SUPABASE_KEY);
 
 let supabase: SupabaseClient | null = null;
 function sb(): SupabaseClient {
