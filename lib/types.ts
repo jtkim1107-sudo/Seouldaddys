@@ -79,6 +79,10 @@ export interface Partner {
   category: string; // 공급처/물류/기타 등
   terms: string; // 거래 조건
   memo: string;
+  site_url: string; // 사이트 주소 (발주 사이트 등)
+  login_id: string; // 사이트 아이디
+  login_pw: string; // 사이트 비밀번호
+  updated_by: string; // 마지막 수정자
   created_at: string;
 }
 

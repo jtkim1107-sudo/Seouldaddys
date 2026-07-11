@@ -81,8 +81,16 @@ create table if not exists partners (
   category text not null default '공급처',
   terms text not null default '',
   memo text not null default '',
+  site_url text not null default '',
+  login_id text not null default '',
+  login_pw text not null default '',
+  updated_by text not null default '',
   created_at timestamptz not null default now()
 );
+alter table partners add column if not exists site_url text not null default '';
+alter table partners add column if not exists login_id text not null default '';
+alter table partners add column if not exists login_pw text not null default '';
+alter table partners add column if not exists updated_by text not null default '';
 
 create table if not exists polls (
   id uuid primary key default gen_random_uuid(),

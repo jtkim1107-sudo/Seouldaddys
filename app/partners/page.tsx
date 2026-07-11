@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Mail, Phone, Plus } from "lucide-react";
+import { Copy, Eye, EyeOff, Globe, KeyRound, Mail, Phone, Plus, UserRound } from "lucide-react";
 import { useTable } from "@/lib/useTable";
-import { insertRow, updateRow, deleteRow, logActivity } from "@/lib/db";
+import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
 import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Partner } from "@/lib/types";
 
@@ -17,7 +17,32 @@ const EMPTY: PartnerForm = {
   category: "공급처",
   terms: "",
   memo: "",
+  site_url: "",
+  login_id: "",
+  login_pw: "",
+  updated_by: "",
 };
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url.startsWith("http") ? url : "https://" + url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+function fullUrl(url: string): string {
+  return url.startsWith("http") ? url : "https://" + url;
+}
+
+async function copyText(text: string, label: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert(`${label}를 복사했습니다.`);
+  } catch {
+    alert("복사에 실패했습니다. 길게 눌러 직접 복사해주세요.");
+  }
+}
 
 const DEFAULT_CATEGORIES = ["공급처", "물류/택배", "스튜디오", "기타"];
 
@@ -29,6 +54,7 @@ export default function PartnersPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
   const [form, setForm] = useState<PartnerForm>(EMPTY);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({}); // 비밀번호 보기 상태
 
   const categories = useMemo(() => {
     const used = partners.map((p) => p.category).filter(Boolean);
@@ -60,11 +86,13 @@ export default function PartnersPage() {
       alert("거래처명을 입력해주세요.");
       return;
     }
+    const me = getCurrentUser();
+    const withEditor = { ...form, updated_by: me?.name || "" };
     if (editing) {
-      await updateRow<Partner>(TABLES.partners, editing.id, form);
+      await updateRow<Partner>(TABLES.partners, editing.id, withEditor);
       logActivity(`거래처 "${form.name}" 수정`);
     } else {
-      await insertRow<Partner>(TABLES.partners, form);
+      await insertRow<Partner>(TABLES.partners, withEditor);
       logActivity(`거래처 "${form.name}" 등록`);
     }
     setShowForm(false);
@@ -136,6 +164,18 @@ export default function PartnersPage() {
               <input className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="md:col-span-3">
+              <label className="label">사이트 주소 (발주·관리 사이트)</label>
+              <input className="input" value={form.site_url} onChange={(e) => setForm({ ...form, site_url: e.target.value })} placeholder="https://..." />
+            </div>
+            <div>
+              <label className="label">사이트 아이디</label>
+              <input className="input" value={form.login_id} onChange={(e) => setForm({ ...form, login_id: e.target.value })} autoComplete="off" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="label">사이트 비밀번호</label>
+              <input className="input" value={form.login_pw} onChange={(e) => setForm({ ...form, login_pw: e.target.value })} autoComplete="off" />
+            </div>
+            <div className="md:col-span-3">
               <label className="label">거래 조건 (단가·결제·배송 등)</label>
               <input className="input" value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} placeholder="예: 월말 정산, 택배비 별도" />
             </div>
@@ -189,9 +229,60 @@ export default function PartnersPage() {
                     {p.email}
                   </a>
                 )}
+                {p.site_url && (
+                  <a href={fullUrl(p.site_url)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-brand-600 hover:underline break-all">
+                    <Globe size={13} strokeWidth={1.75} />
+                    {hostOf(p.site_url)}
+                  </a>
+                )}
               </div>
+
+              {/* 사이트 계정 정보 */}
+              {(p.login_id || p.login_pw) && (
+                <div className="rounded-md bg-stone-50 px-2 py-1.5 space-y-1 text-xs text-stone-600">
+                  {p.login_id && (
+                    <div className="flex items-center gap-1.5">
+                      <UserRound size={12} strokeWidth={1.75} className="text-stone-400 flex-shrink-0" />
+                      <span className="num break-all">{p.login_id}</span>
+                      <button
+                        onClick={() => copyText(p.login_id, "아이디")}
+                        className="ml-auto text-stone-400 hover:text-brand-600 transition-colors flex-shrink-0"
+                        aria-label="아이디 복사"
+                      >
+                        <Copy size={12} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  )}
+                  {p.login_pw && (
+                    <div className="flex items-center gap-1.5">
+                      <KeyRound size={12} strokeWidth={1.75} className="text-stone-400 flex-shrink-0" />
+                      <span className="num break-all">
+                        {revealed[p.id] ? p.login_pw : "••••••••"}
+                      </span>
+                      <button
+                        onClick={() => setRevealed({ ...revealed, [p.id]: !revealed[p.id] })}
+                        className="ml-auto text-stone-400 hover:text-brand-600 transition-colors flex-shrink-0"
+                        aria-label="비밀번호 보기"
+                      >
+                        {revealed[p.id] ? <EyeOff size={12} strokeWidth={1.75} /> : <Eye size={12} strokeWidth={1.75} />}
+                      </button>
+                      <button
+                        onClick={() => copyText(p.login_pw, "비밀번호")}
+                        className="text-stone-400 hover:text-brand-600 transition-colors flex-shrink-0"
+                        aria-label="비밀번호 복사"
+                      >
+                        <Copy size={12} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {p.terms && <div className="text-xs text-stone-500 bg-stone-50 rounded-md px-2 py-1.5">{p.terms}</div>}
               {p.memo && <div className="text-xs text-stone-400">{p.memo}</div>}
+              {p.updated_by && (
+                <div className="text-[11px] text-stone-300 mt-auto pt-1">마지막 수정: {p.updated_by}</div>
+              )}
             </div>
           ))}
         </div>
