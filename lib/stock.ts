@@ -37,4 +37,4 @@ export const MOVE_BADGE: Record<StockMove["type"], { label: string; cls: string 
   adjust: { label: "보정", cls: "bg-amber-50 text-amber-700" },
 };
 
-export const SALE_CHANNELS = ["스마트스토어", "쿠팡", "자사몰", "오프라인", "기타"];
+export const SALE_CHANNELS = ["쿠팡", "스마트스토어", "캐나다 수출", "기타"];
