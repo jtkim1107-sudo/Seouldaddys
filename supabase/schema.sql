@@ -35,9 +35,11 @@ create table if not exists events (
   memo text not null default '',
   author text not null default '',
   repeat text not null default '', -- '' | weekly | monthly
+  end_date text not null default '', -- 여러 날 일정의 종료일
   created_at timestamptz not null default now()
 );
 alter table events add column if not exists repeat text not null default '';
+alter table events add column if not exists end_date text not null default '';
 
 create table if not exists notices (
   id uuid primary key default gen_random_uuid(),

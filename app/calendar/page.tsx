@@ -26,6 +26,7 @@ export default function CalendarPage() {
   const [time, setTime] = useState("");
   const [memo, setMemo] = useState("");
   const [repeat, setRepeat] = useState<EventRepeat>("");
+  const [endDate, setEndDate] = useState(""); // 종료일 (여러 날 일정)
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -47,22 +48,30 @@ export default function CalendarPage() {
 
   async function add() {
     if (!title.trim()) return;
+    if (endDate && endDate < selected) {
+      alert("종료일이 시작일보다 빠를 수 없습니다.");
+      return;
+    }
     const user = getCurrentUser();
     await insertRow<CalEvent>(TABLES.events, {
       title: title.trim(),
       date: selected,
+      end_date: endDate && endDate > selected ? endDate : "",
       time,
       memo: memo.trim(),
       author: user?.name || "",
-      repeat,
+      repeat: endDate && endDate > selected ? "" : repeat, // 기간 일정은 반복 없음
     });
     logActivity(
-      `일정 "${title.trim()}" 등록 (${selected}${repeat === "weekly" ? " · 매주" : repeat === "monthly" ? " · 매월" : ""})`
+      `일정 "${title.trim()}" 등록 (${selected}${
+        endDate && endDate > selected ? `~${endDate}` : ""
+      }${repeat === "weekly" ? " · 매주" : repeat === "monthly" ? " · 매월" : ""})`
     );
     setTitle("");
     setTime("");
     setMemo("");
     setRepeat("");
+    setEndDate("");
   }
 
   async function remove(e: CalEvent) {
@@ -177,12 +186,17 @@ export default function CalendarPage() {
               {selectedEvents.map((e) => (
                 <li key={e.id} className="rounded-lg bg-stone-50 p-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium flex items-center gap-1.5">
+                    <span className="font-medium flex items-center gap-1.5 flex-wrap">
                       {e.title}
                       {(e.repeat === "weekly" || e.repeat === "monthly") && (
                         <span className="inline-flex items-center gap-0.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
                           <Repeat size={10} strokeWidth={2} />
                           {e.repeat === "weekly" ? "매주" : "매월"}
+                        </span>
+                      )}
+                      {e.end_date && e.end_date > e.date && (
+                        <span className="num inline-flex items-center rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">
+                          {e.date.slice(5).replace("-", "/")}~{e.end_date.slice(5).replace("-", "/")}
                         </span>
                       )}
                     </span>
@@ -217,7 +231,17 @@ export default function CalendarPage() {
               onKeyDown={(e) => e.key === "Enter" && add()}
             />
             <input className="input num" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-            <select className="input" value={repeat} onChange={(e) => setRepeat(e.target.value as EventRepeat)}>
+            <div>
+              <label className="label">종료일 (전시회처럼 여러 날이면 선택)</label>
+              <input
+                className="input num"
+                type="date"
+                min={selected}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <select className="input" value={repeat} onChange={(e) => setRepeat(e.target.value as EventRepeat)} disabled={Boolean(endDate && endDate > selected)}>
               <option value="">반복 안 함</option>
               <option value="weekly">매주 (같은 요일)</option>
               <option value="monthly">매월 (같은 날짜)</option>

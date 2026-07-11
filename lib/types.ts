@@ -29,7 +29,8 @@ export type EventRepeat = "" | "weekly" | "monthly";
 export interface CalEvent {
   id: string;
   title: string;
-  date: string; // YYYY-MM-DD (반복 일정이면 시작일)
+  date: string; // YYYY-MM-DD (시작일)
+  end_date?: string; // 종료일 (여러 날 일정, 없으면 하루)
   time: string; // HH:MM, 없으면 ""
   memo: string;
   author: string;
