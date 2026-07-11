@@ -30,10 +30,14 @@ function lsRead<T>(table: TableName): T[] {
   }
 }
 
-function lsWrite<T>(table: TableName, rows: T[]) {
-  localStorage.setItem(LS_PREFIX + table, JSON.stringify(rows));
+function notifyChange(table: TableName) {
   // 같은 브라우저의 다른 탭/컴포넌트에 변경 알림
   window.dispatchEvent(new CustomEvent(LS_PREFIX + "change", { detail: table }));
+}
+
+function lsWrite<T>(table: TableName, rows: T[]) {
+  localStorage.setItem(LS_PREFIX + table, JSON.stringify(rows));
+  notifyChange(table);
 }
 
 function makeId(): string {
@@ -47,10 +51,12 @@ type Row = { id: string; created_at: string };
 
 export async function listRows<T extends Row>(table: TableName, ascending = false): Promise<T[]> {
   if (isSharedMode) {
+    // 10초 안에 응답이 없으면 오류로 처리 (무한 "불러오는 중" 방지)
     const { data, error } = await sb()
       .from(table)
       .select("*")
-      .order("created_at", { ascending });
+      .order("created_at", { ascending })
+      .abortSignal(AbortSignal.timeout(10000));
     if (error) throw error;
     return (data || []) as T[];
   }
@@ -74,6 +80,7 @@ export async function insertRow<T extends Row>(
       .select()
       .single();
     if (error) throw error;
+    notifyChange(table); // 실시간 연결이 느려도 내 화면은 즉시 갱신
     return data as T;
   }
   const full = { ...row, id: makeId(), created_at: new Date().toISOString() } as T;
@@ -94,6 +101,7 @@ export async function updateRow<T extends Row>(
       .update(patch as Record<string, unknown>)
       .eq("id", id);
     if (error) throw error;
+    notifyChange(table);
     return;
   }
   const rows = lsRead<T>(table);
@@ -107,6 +115,7 @@ export async function deleteRow(table: TableName, id: string): Promise<void> {
   if (isSharedMode) {
     const { error } = await sb().from(table).delete().eq("id", id);
     if (error) throw error;
+    notifyChange(table);
     return;
   }
   const rows = lsRead<Row>(table);
@@ -116,31 +125,53 @@ export async function deleteRow(table: TableName, id: string): Promise<void> {
   );
 }
 
-// 테이블 변경 구독 — 공유 모드에서는 Supabase Realtime, 체험 모드에서는 브라우저 이벤트
+// 테이블 변경 구독
+// 공유 모드: Supabase Realtime + 주기적 폴링(실시간 연결이 막힌 환경 대비) + 창 복귀 시 갱신
+// 체험 모드: 브라우저 이벤트
 export function subscribeTable(table: TableName, onChange: () => void): () => void {
-  if (isSharedMode) {
-    const channel = sb()
-      .channel("realtime:" + table)
-      .on("postgres_changes", { event: "*", schema: "public", table }, onChange)
-      .subscribe();
-    return () => {
-      sb().removeChannel(channel);
-    };
-  }
+  const cleanups: (() => void)[] = [];
+
+  // 같은 기기에서의 변경 즉시 반영 (양쪽 모드 공통)
   const handler = (e: Event) => {
     const detail = (e as CustomEvent).detail;
     if (detail === table) onChange();
   };
   window.addEventListener(LS_PREFIX + "change", handler);
-  // 다른 탭에서의 변경도 감지
-  const storageHandler = (e: StorageEvent) => {
-    if (e.key === LS_PREFIX + table) onChange();
-  };
-  window.addEventListener("storage", storageHandler);
-  return () => {
-    window.removeEventListener(LS_PREFIX + "change", handler);
-    window.removeEventListener("storage", storageHandler);
-  };
+  cleanups.push(() => window.removeEventListener(LS_PREFIX + "change", handler));
+
+  if (isSharedMode) {
+    const channel = sb()
+      .channel("realtime:" + table)
+      .on("postgres_changes", { event: "*", schema: "public", table }, onChange)
+      .subscribe();
+    cleanups.push(() => {
+      sb().removeChannel(channel);
+    });
+
+    // 실시간 연결이 안 되는 환경 대비: 채팅은 4초, 나머지는 15초마다 새로 불러오기
+    const interval = setInterval(onChange, table === "messages" ? 4000 : 15000);
+    cleanups.push(() => clearInterval(interval));
+
+    // 앱/탭으로 돌아왔을 때 즉시 갱신
+    const onVisible = () => {
+      if (document.visibilityState === "visible") onChange();
+    };
+    window.addEventListener("focus", onChange);
+    document.addEventListener("visibilitychange", onVisible);
+    cleanups.push(() => {
+      window.removeEventListener("focus", onChange);
+      document.removeEventListener("visibilitychange", onVisible);
+    });
+  } else {
+    // 다른 탭에서의 변경도 감지
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === LS_PREFIX + table) onChange();
+    };
+    window.addEventListener("storage", storageHandler);
+    cleanups.push(() => window.removeEventListener("storage", storageHandler));
+  }
+
+  return () => cleanups.forEach((fn) => fn());
 }
 
 // ---------- 멤버 등록 ----------

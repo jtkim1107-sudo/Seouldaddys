@@ -6,7 +6,7 @@ import { insertRow, getCurrentUser, isSharedMode } from "@/lib/db";
 import { TABLES, type Message } from "@/lib/types";
 
 export default function ChatPage() {
-  const { rows: messages, loading } = useTable<Message>(TABLES.messages, true);
+  const { rows: messages, loading, error } = useTable<Message>(TABLES.messages, true);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const user = getCurrentUser();
@@ -19,11 +19,23 @@ export default function ChatPage() {
     const content = text.trim();
     if (!content || !user) return;
     setText("");
-    await insertRow<Message>(TABLES.messages, {
-      author: user.name,
-      emoji: user.emoji,
-      content,
-    });
+    try {
+      await insertRow<Message>(TABLES.messages, {
+        author: user.name,
+        emoji: user.emoji,
+        content,
+      });
+    } catch (e) {
+      console.error("메시지 전송 실패", e);
+      setText(content); // 입력 내용 복구
+      const detail =
+        (e as { message?: string })?.message || JSON.stringify(e) || String(e);
+      alert(
+        "메시지 전송에 실패했습니다.\n인터넷 연결을 확인하고 다시 시도해주세요.\n(계속 실패하면 이 메시지를 관리자에게 알려주세요: " +
+          detail +
+          ")"
+      );
+    }
   }
 
   return (
@@ -37,6 +49,15 @@ export default function ChatPage() {
 
       <div className="card flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              ⚠️ 메시지를 불러오지 못했습니다.
+              <div className="text-xs mt-1 break-all">원인: {error}</div>
+              <div className="text-xs mt-1 text-red-400">
+                이 화면을 캡처해서 관리자에게 보내주세요.
+              </div>
+            </div>
+          )}
           {loading ? (
             <p className="text-center text-slate-400 text-sm py-10">불러오는 중...</p>
           ) : messages.length === 0 ? (

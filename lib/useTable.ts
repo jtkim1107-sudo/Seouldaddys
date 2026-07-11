@@ -11,12 +11,17 @@ export function useTable<T extends { id: string; created_at: string }>(
 ) {
   const [rows, setRows] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
       setRows(await listRows<T>(table, ascending));
+      setError(null);
     } catch (e) {
       console.error(`${table} 불러오기 실패`, e);
+      const detail =
+        (e as { message?: string })?.message || JSON.stringify(e) || String(e);
+      setError(detail);
     } finally {
       setLoading(false);
     }
@@ -27,7 +32,7 @@ export function useTable<T extends { id: string; created_at: string }>(
     return subscribeTable(table, reload);
   }, [table, reload]);
 
-  return { rows, loading, reload };
+  return { rows, loading, error, reload };
 }
 
 export function formatDateTime(iso: string): string {
