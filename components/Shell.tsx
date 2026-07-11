@@ -45,7 +45,7 @@ const NAV = [
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v6.1";
+export const APP_VERSION = "v6.2";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -135,8 +135,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    setUser(getCurrentUser());
+    const u = getCurrentUser();
+    setUser(u);
     setReady(true);
+    // 명단 등록이 누락된 경우 자동 복구 (앱을 열 때마다 확인)
+    if (u) ensureMember(u.name, u.emoji || "");
     return subscribeUser(() => setUser(getCurrentUser()));
   }, []);
 

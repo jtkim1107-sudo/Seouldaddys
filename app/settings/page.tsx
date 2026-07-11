@@ -6,12 +6,14 @@ import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, logActivity, isSharedMode, getCurrentUser } from "@/lib/db";
 import { pushSupported, getSubscription, enablePush, disablePush } from "@/lib/push";
 import { initialOf } from "@/components/Shell";
-import { TABLES, type Setting, type Member, type Todo } from "@/lib/types";
+import { TABLES, type Setting, type Member, type Todo, type Message, type Activity } from "@/lib/types";
 
 export default function SettingsPage() {
   const { rows: settings, loading } = useTable<Setting>(TABLES.settings);
   const { rows: members } = useTable<Member>(TABLES.members, true);
   const { rows: allTodos } = useTable<Todo>(TABLES.todos);
+  const { rows: allMessages } = useTable<Message>(TABLES.messages);
+  const { rows: allActivities } = useTable<Activity>(TABLES.activities);
   const [pw, setPw] = useState("");
   const [adminPick, setAdminPick] = useState("");
   // 알림 상태: null=확인 중, false=꺼짐, true=켜짐, "unsupported"=미지원
@@ -86,6 +88,43 @@ export default function SettingsPage() {
     if (!confirm("관리자 지정을 해제할까요? 해제하면 다시 모두가 삭제할 수 있게 됩니다.")) return;
     await deleteRow(TABLES.settings, adminRow.id);
     logActivity("관리자 지정 해제");
+  }
+
+  // 명단에는 없지만 기록(할 일·채팅·활동)에 등장하는 유령 이름
+  const memberNameSet = new Set(members.map((m) => m.name));
+  const ghostNames = Array.from(
+    new Set([
+      ...allTodos.map((t) => t.assignee),
+      ...allMessages.map((m) => m.author),
+      ...allActivities.map((a) => a.user),
+    ])
+  ).filter((n) => n && !memberNameSet.has(n));
+
+  // 유령 이름 정리: 할 일 담당 해제 + 채팅·활동 기록 삭제 (흔적 완전 제거)
+  async function cleanGhost(name: string) {
+    const ghostTodos = allTodos.filter((t) => t.assignee === name);
+    const ghostMsgs = allMessages.filter((m) => m.author === name);
+    const ghostActs = allActivities.filter((a) => a.user === name);
+    if (
+      !confirm(
+        `"${name}" 이름의 흔적을 모두 정리할까요?\n` +
+          `- 할 일 ${ghostTodos.length}건 담당 해제\n` +
+          `- 채팅 ${ghostMsgs.length}건 삭제\n` +
+          `- 활동 기록 ${ghostActs.length}건 삭제\n` +
+          `이 작업은 되돌릴 수 없습니다.`
+      )
+    )
+      return;
+    for (const t of ghostTodos) {
+      await updateRow<Todo>(TABLES.todos, t.id, { assignee: "" });
+    }
+    for (const m of ghostMsgs) {
+      await deleteRow(TABLES.messages, m.id);
+    }
+    for (const a of ghostActs) {
+      await deleteRow(TABLES.activities, a.id);
+    }
+    logActivity(`미등록 이름 "${name}" 기록 정리`);
   }
 
   // 팀원 내보내기 (퇴사 등) — 미완료 할 일은 담당자 미지정으로 이동
@@ -281,6 +320,39 @@ export default function SettingsPage() {
         )}
         {!canManage && (
           <p className="text-xs text-stone-400 mt-3">내보내기는 관리자({adminRow?.value})만 할 수 있습니다.</p>
+        )}
+
+        {/* 명단에 없는 이름 (기록에만 등장) */}
+        {ghostNames.length > 0 && (
+          <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--border-soft)" }}>
+            <p className="text-xs font-semibold text-stone-500 mb-2">
+              명단에 없는 이름 (기록에만 등장 — 잘못 입력했거나 예전에 들어왔던 이름)
+            </p>
+            <div className="space-y-1.5">
+              {ghostNames.map((n) => (
+                <div
+                  key={n}
+                  className="flex items-center gap-2.5 rounded-[10px] border border-dashed px-3 py-2"
+                  style={{ borderColor: "var(--border-1)" }}
+                >
+                  <span className="avatar h-7 w-7 text-xs">{initialOf(n)}</span>
+                  <span className="text-sm font-semibold text-stone-500">{n}</span>
+                  <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                    미등록
+                  </span>
+                  {canManage && (
+                    <button
+                      onClick={() => cleanGhost(n)}
+                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
+                    >
+                      <UserMinus size={13} strokeWidth={1.75} />
+                      정리
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
