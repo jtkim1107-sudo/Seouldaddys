@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Download, Folder, Plus, Upload } from "lucide-react";
 import { useTable } from "@/lib/useTable";
-import { insertRow, updateRow, deleteRow } from "@/lib/db";
+import { insertRow, updateRow, deleteRow, logActivity } from "@/lib/db";
 import { TABLES, type Product } from "@/lib/types";
 
 type ProductForm = Omit<Product, "id" | "created_at">;
@@ -95,13 +95,20 @@ export default function ProductsPage() {
       alert("상품명을 입력해주세요");
       return;
     }
-    if (editing) await updateRow<Product>(TABLES.products, editing.id, form);
-    else await insertRow<Product>(TABLES.products, form);
+    if (editing) {
+      await updateRow<Product>(TABLES.products, editing.id, form);
+      logActivity(`상품 "${form.name}" 수정`);
+    } else {
+      await insertRow<Product>(TABLES.products, form);
+      logActivity(`상품 "${form.name}" 등록`);
+    }
     setShowForm(false);
   }
 
   async function remove(p: Product) {
-    if (confirm(`"${p.name}" 상품을 삭제할까요?`)) await deleteRow(TABLES.products, p.id);
+    if (!confirm(`"${p.name}" 상품을 삭제할까요?`)) return;
+    await deleteRow(TABLES.products, p.id);
+    logActivity(`상품 "${p.name}" 삭제`);
   }
 
   function exportCsv() {
@@ -147,6 +154,7 @@ export default function ProductsPage() {
         memo: r[8]?.trim() || "",
       });
     }
+    logActivity(`상품 ${body.length}개 CSV 가져오기`);
     alert(`${body.length}개 상품을 가져왔습니다`);
   }
 

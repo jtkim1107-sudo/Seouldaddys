@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Pin, PinOff, Plus } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
-import { insertRow, updateRow, deleteRow, getCurrentUser } from "@/lib/db";
+import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
 import { TABLES, type Notice } from "@/lib/types";
 
 export default function NoticesPage() {
@@ -26,6 +26,7 @@ export default function NoticesPage() {
       pinned: false,
       author: user?.name || "",
     });
+    logActivity(`공지 "${title.trim()}" 등록`);
     setTitle("");
     setContent("");
     setShowForm(false);

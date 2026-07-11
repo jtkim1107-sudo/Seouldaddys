@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useTable } from "@/lib/useTable";
-import { insertRow, updateRow, deleteRow, getCurrentUser } from "@/lib/db";
+import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
 import { TABLES, type Todo, type TodoStatus, type Member } from "@/lib/types";
 import { initialOf } from "@/components/Shell";
 
@@ -53,12 +53,14 @@ export default function TodosPage() {
 
   async function add() {
     if (!title.trim()) return;
+    const who = assignee || me?.name || "";
     await insertRow<Todo>(TABLES.todos, {
       title: title.trim(),
       status: "todo",
-      assignee: assignee || me?.name || "",
+      assignee: who,
       due,
     });
+    logActivity(`할 일 "${title.trim()}" 등록 (담당: ${who || "미지정"})`);
     setTitle("");
     setDue("");
   }
@@ -68,7 +70,9 @@ export default function TodosPage() {
   }
 
   async function toggleDone(t: Todo) {
-    await updateRow<Todo>(TABLES.todos, t.id, { status: t.status === "done" ? "todo" : "done" });
+    const done = t.status !== "done";
+    await updateRow<Todo>(TABLES.todos, t.id, { status: done ? "done" : "todo" });
+    if (done) logActivity(`할 일 "${t.title}" 완료`);
   }
 
   async function remove(t: Todo) {

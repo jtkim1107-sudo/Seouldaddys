@@ -34,8 +34,10 @@ create table if not exists events (
   time text not null default '',
   memo text not null default '',
   author text not null default '',
+  repeat text not null default '', -- '' | weekly | monthly
   created_at timestamptz not null default now()
 );
+alter table events add column if not exists repeat text not null default '';
 
 create table if not exists notices (
   id uuid primary key default gen_random_uuid(),
@@ -70,13 +72,59 @@ create table if not exists files (
   created_at timestamptz not null default now()
 );
 
+create table if not exists partners (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  contact_name text not null default '',
+  phone text not null default '',
+  email text not null default '',
+  category text not null default '공급처',
+  terms text not null default '',
+  memo text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists polls (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  options jsonb not null default '[]',
+  votes jsonb not null default '{}',
+  closed boolean not null default false,
+  author text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists activities (
+  id uuid primary key default gen_random_uuid(),
+  "user" text not null default '',
+  action text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists sales (
+  id uuid primary key default gen_random_uuid(),
+  date text not null,
+  amount numeric not null default 0,
+  channel text not null default '',
+  memo text not null default '',
+  author text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists settings (
+  id uuid primary key default gen_random_uuid(),
+  key text not null,
+  value text not null default '',
+  created_at timestamptz not null default now()
+);
+
 -- 팀 내부용 앱: anon 키를 가진 사용자(= 앱 주소를 아는 팀원)에게 전체 권한 허용
 -- 앱 주소와 키는 팀 밖으로 공유하지 마세요.
 do $$
 declare
   t text;
 begin
-  foreach t in array array['members','todos','messages','events','notices','products','files']
+  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','settings']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "team_all" on %I', t);
@@ -89,11 +137,11 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['members','todos','messages','events','notices','products','files']
+  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','settings']
   loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
-    exception when duplicate_object then null;
+    exception when others then null;
     end;
   end loop;
 end $$;

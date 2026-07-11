@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Package,
-  FolderOpen,
+  Banknote,
+  Building2,
   Calendar,
+  FolderOpen,
+  History,
+  LayoutDashboard,
   ListTodo,
-  MessageCircle,
   Megaphone,
   Menu,
+  MessageCircle,
+  Package,
+  Settings,
+  Vote,
   X,
 } from "lucide-react";
 import {
@@ -21,21 +26,28 @@ import {
   ensureMember,
   isSharedMode,
   configError,
+  listRows,
   type CurrentUser,
 } from "@/lib/db";
+import type { Setting } from "@/lib/types";
 
 const NAV = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
   { href: "/products", label: "상품마스터", Icon: Package },
+  { href: "/partners", label: "거래처", Icon: Building2 },
   { href: "/files", label: "자료실", Icon: FolderOpen },
   { href: "/calendar", label: "일정", Icon: Calendar },
   { href: "/todos", label: "할 일", Icon: ListTodo },
+  { href: "/sales", label: "매출", Icon: Banknote },
+  { href: "/polls", label: "투표", Icon: Vote },
   { href: "/chat", label: "팀 채팅", Icon: MessageCircle },
   { href: "/notices", label: "공지사항", Icon: Megaphone },
+  { href: "/activity", label: "활동 기록", Icon: History },
+  { href: "/settings", label: "설정", Icon: Settings },
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v3.0";
+export const APP_VERSION = "v4.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -52,10 +64,22 @@ function ConfigErrorBanner() {
 
 function LoginScreen() {
   const [name, setName] = useState("");
+  const [pw, setPw] = useState("");
+  const [teamPw, setTeamPw] = useState<string | null>(null); // null = 확인 중
+
+  useEffect(() => {
+    listRows<Setting>("settings")
+      .then((rows) => setTeamPw(rows.find((s) => s.key === "team_password")?.value || ""))
+      .catch(() => setTeamPw("")); // 확인 실패 시 잠금 없이 진행
+  }, []);
 
   function enter() {
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (teamPw && pw !== teamPw) {
+      alert("비밀번호가 맞지 않습니다.");
+      return;
+    }
     setCurrentUser({ name: trimmed, emoji: "" });
     ensureMember(trimmed, ""); // 팀원 명단에 자동 등록
   }
@@ -71,14 +95,29 @@ function LoginScreen() {
         </div>
         <label className="label">이름 (팀원들에게 보이는 이름)</label>
         <input
-          className="input mb-5"
+          className="input mb-4"
           placeholder="예: 김선우"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && enter()}
         />
-        <button onClick={enter} className="btn-primary w-full h-[42px]">
-          입장하기
+        {teamPw ? (
+          <>
+            <label className="label">팀 비밀번호</label>
+            <input
+              className="input mb-5"
+              type="password"
+              placeholder="비밀번호"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && enter()}
+            />
+          </>
+        ) : (
+          <div className="mb-1" />
+        )}
+        <button onClick={enter} disabled={teamPw === null} className="btn-primary w-full h-[42px] disabled:opacity-60">
+          {teamPw === null ? "확인 중..." : "입장하기"}
         </button>
         {!isSharedMode && (
           <p className="text-xs text-amber-700 bg-amber-50 rounded-[10px] p-3 mt-4 leading-relaxed">

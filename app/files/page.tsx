@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ExternalLink, FileSpreadsheet, FileText, Folder, Link as LinkIcon, Plus, Presentation } from "lucide-react";
 import { useTable, formatDateTime } from "@/lib/useTable";
-import { insertRow, deleteRow, getCurrentUser } from "@/lib/db";
+import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
 import { TABLES, type FileLink } from "@/lib/types";
 
 const DEFAULT_CATEGORIES = ["상품자료", "거래처", "정산/세금", "디자인", "기타"];
@@ -50,6 +50,7 @@ export default function FilesPage() {
       memo: memo.trim(),
       author: user?.name || "",
     });
+    logActivity(`자료 "${title.trim()}" 등록`);
     setTitle("");
     setUrl("");
     setMemo("");

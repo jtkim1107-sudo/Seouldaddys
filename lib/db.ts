@@ -245,6 +245,18 @@ export async function ensureMember(name: string, emoji: string): Promise<void> {
   }
 }
 
+// ---------- 활동 기록 ----------
+
+// 주요 작업을 활동 기록에 남긴다 (실패해도 원래 작업에는 영향 없음)
+type ActivityRow = { id: string; user: string; action: string; created_at: string };
+
+export function logActivity(action: string): void {
+  const user = getCurrentUser();
+  insertRow<ActivityRow>("activities", { user: user?.name || "", action }).catch((e) =>
+    console.error("활동 기록 실패", e)
+  );
+}
+
 // ---------- 현재 사용자 (기기별 저장) ----------
 
 export interface CurrentUser {

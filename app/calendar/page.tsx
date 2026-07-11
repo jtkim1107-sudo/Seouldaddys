@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Repeat } from "lucide-react";
 import { useTable, todayStr } from "@/lib/useTable";
-import { insertRow, deleteRow, getCurrentUser } from "@/lib/db";
-import { TABLES, type CalEvent } from "@/lib/types";
+import { insertRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
+import { TABLES, type CalEvent, type EventRepeat } from "@/lib/types";
+import { occursOn } from "@/lib/events";
 
 function ymd(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -22,6 +23,7 @@ export default function CalendarPage() {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
   const [memo, setMemo] = useState("");
+  const [repeat, setRepeat] = useState<EventRepeat>("");
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -37,7 +39,7 @@ export default function CalendarPage() {
   }
 
   const byDate = (date: string) =>
-    events.filter((e) => e.date === date).sort((a, b) => a.time.localeCompare(b.time));
+    events.filter((e) => occursOn(e, date)).sort((a, b) => a.time.localeCompare(b.time));
 
   const selectedEvents = byDate(selected);
 
@@ -50,14 +52,25 @@ export default function CalendarPage() {
       time,
       memo: memo.trim(),
       author: user?.name || "",
+      repeat,
     });
+    logActivity(
+      `일정 "${title.trim()}" 등록 (${selected}${repeat === "weekly" ? " · 매주" : repeat === "monthly" ? " · 매월" : ""})`
+    );
     setTitle("");
     setTime("");
     setMemo("");
+    setRepeat("");
   }
 
   async function remove(e: CalEvent) {
-    if (confirm(`"${e.title}" 일정을 삭제할까요?`)) await deleteRow(TABLES.events, e.id);
+    const isRepeat = e.repeat === "weekly" || e.repeat === "monthly";
+    const msg = isRepeat
+      ? `"${e.title}" 반복 일정을 삭제할까요? 모든 반복 날짜에서 사라집니다.`
+      : `"${e.title}" 일정을 삭제할까요?`;
+    if (!confirm(msg)) return;
+    await deleteRow(TABLES.events, e.id);
+    logActivity(`일정 "${e.title}" 삭제`);
   }
 
   return (
@@ -145,8 +158,16 @@ export default function CalendarPage() {
               {selectedEvents.map((e) => (
                 <li key={e.id} className="rounded-lg bg-slate-50 p-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{e.title}</span>
-                    <button onClick={() => remove(e)} className="text-xs text-slate-300 hover:text-red-500">
+                    <span className="font-medium flex items-center gap-1.5">
+                      {e.title}
+                      {(e.repeat === "weekly" || e.repeat === "monthly") && (
+                        <span className="inline-flex items-center gap-0.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
+                          <Repeat size={10} strokeWidth={2} />
+                          {e.repeat === "weekly" ? "매주" : "매월"}
+                        </span>
+                      )}
+                    </span>
+                    <button onClick={() => remove(e)} className="text-xs text-stone-300 hover:text-red-500">
                       삭제
                     </button>
                   </div>
@@ -174,7 +195,12 @@ export default function CalendarPage() {
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && add()}
             />
-            <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <input className="input num" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <select className="input" value={repeat} onChange={(e) => setRepeat(e.target.value as EventRepeat)}>
+              <option value="">반복 안 함</option>
+              <option value="weekly">매주 (같은 요일)</option>
+              <option value="monthly">매월 (같은 날짜)</option>
+            </select>
             <input className="input" placeholder="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} />
             <button onClick={add} className="btn-primary w-full justify-center">
               추가
