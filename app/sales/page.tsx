@@ -116,7 +116,7 @@ export default function SalesPage() {
 
       <div className="grid lg:grid-cols-3 gap-4">
         {/* 월별 합계 */}
-        <div className="card p-5">
+        <div className="card p-5 min-w-0">
           <h2 className="section-title mb-3">월별 합계</h2>
           {monthly.length === 0 ? (
             <p className="text-sm text-stone-400 py-4 text-center">아직 기록이 없습니다.</p>
@@ -140,7 +140,7 @@ export default function SalesPage() {
         </div>
 
         {/* 선택한 달 상세 */}
-        <div className="card p-5 lg:col-span-2">
+        <div className="card p-5 lg:col-span-2 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h2 className="section-title">
               <span className="num">{month.replace("-", "년 ")}월</span> 상세

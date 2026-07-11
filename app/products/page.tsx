@@ -169,7 +169,7 @@ export default function ProductsPage() {
             총 <span className="num">{products.length}</span>개 상품 · 구글드라이브 링크로 상세자료 연결
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={exportCsv} className="btn-ghost">
             <Download size={16} strokeWidth={1.75} />
             CSV 내보내기
