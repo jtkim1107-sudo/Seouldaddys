@@ -25,6 +25,14 @@ if (RAW_URL) {
   try {
     const parsed = new URL(RAW_URL.startsWith("http") ? RAW_URL : "https://" + RAW_URL);
     SUPABASE_URL = parsed.origin;
+    // 프로젝트 API 주소(xxxx.supabase.co)가 아니면 안내
+    // (대시보드 주소 supabase.com/... 를 잘못 넣는 실수가 흔하다)
+    if (!/\.supabase\.(co|in|red)$/.test(parsed.hostname)) {
+      configError =
+        "설정 오류: NEXT_PUBLIC_SUPABASE_URL 값이 프로젝트 API 주소가 아닙니다. " +
+        "Supabase의 Settings → API에 있는 Project URL(https://내프로젝트.supabase.co 형식)을 넣어야 합니다. " +
+        "(현재 값: " + SUPABASE_URL + ")";
+    }
   } catch {
     configError =
       "설정 오류: NEXT_PUBLIC_SUPABASE_URL 값이 인터넷 주소 형식이 아닙니다. " +
@@ -33,6 +41,9 @@ if (RAW_URL) {
       ")";
   }
 }
+
+// 오류 화면에 표시할 진단용 서버 주소
+export const supabaseAddress = SUPABASE_URL || "(설정 안 됨)";
 if (!configError && SUPABASE_URL && SUPABASE_KEY) {
   // 유효한 키 형식: JWT(anon public, eyJ...로 시작·점 2개 포함) 또는 새 형식(sb_publishable_...)
   const looksJwt = /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(SUPABASE_KEY);

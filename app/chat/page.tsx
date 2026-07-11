@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTable, formatDateTime } from "@/lib/useTable";
-import { insertRow, getCurrentUser, isSharedMode } from "@/lib/db";
+import { insertRow, getCurrentUser, isSharedMode, supabaseAddress } from "@/lib/db";
 import { TABLES, type Message } from "@/lib/types";
 
 export default function ChatPage() {
@@ -53,6 +53,11 @@ export default function ChatPage() {
             <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
               ⚠️ 메시지를 불러오지 못했습니다.
               <div className="text-xs mt-1 break-all">원인: {error}</div>
+              {isSharedMode && (
+                <div className="text-xs mt-1 break-all text-red-400">
+                  접속 주소: {supabaseAddress}
+                </div>
+              )}
               <div className="text-xs mt-1 text-red-400">
                 이 화면을 캡처해서 관리자에게 보내주세요.
               </div>
