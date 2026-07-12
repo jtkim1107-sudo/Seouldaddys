@@ -113,7 +113,11 @@ body {
   max-width: 560px !important;
   padding-bottom: 6rem !important;
 }
-/* 다열 그리드를 한 줄로 (달력의 7열 그리드는 제외) */
-.force-mobile main .grid:not(.grid-cols-7) {
+/* 다열 그리드를 한 줄로 (달력 7열, 기본 2열 그리드는 유지) */
+.force-mobile main .grid:not(.grid-cols-7):not(.grid-cols-2) {
   grid-template-columns: 1fr !important;
+}
+/* 기본 2열 그리드(대시보드 통계 등)는 모바일처럼 2열 고정 */
+.force-mobile main .grid.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }

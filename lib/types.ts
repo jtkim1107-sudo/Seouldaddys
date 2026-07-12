@@ -140,6 +140,18 @@ export interface PushSub {
   created_at: string;
 }
 
+// 지출 기록 (간단 회계)
+export interface Expense {
+  id: string;
+  date: string; // YYYY-MM-DD
+  category: string; // 광고비, 택배/물류비 등
+  amount: number;
+  payer: string; // 결제한 사람 (정산용)
+  memo: string;
+  author: string;
+  created_at: string;
+}
+
 export interface Minute {
   id: string;
   title: string;
@@ -171,6 +183,7 @@ export const TABLES = {
   activities: "activities",
   sales: "sales",
   stock_moves: "stock_moves",
+  expenses: "expenses",
   minutes: "minutes",
   settings: "settings",
   push_subs: "push_subs",

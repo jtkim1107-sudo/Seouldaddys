@@ -140,6 +140,17 @@ create table if not exists stock_moves (
   created_at timestamptz not null default now()
 );
 
+create table if not exists expenses (
+  id uuid primary key default gen_random_uuid(),
+  date text not null,
+  category text not null default '기타',
+  amount numeric not null default 0,
+  payer text not null default '',
+  memo text not null default '',
+  author text not null default '',
+  created_at timestamptz not null default now()
+);
+
 create table if not exists minutes (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -171,7 +182,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','stock_moves','minutes','settings','push_subs']
+  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','stock_moves','expenses','minutes','settings','push_subs']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "team_all" on %I', t);
@@ -184,7 +195,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','stock_moves','minutes','settings','push_subs']
+  foreach t in array array['members','todos','messages','events','notices','products','files','partners','polls','activities','sales','stock_moves','expenses','minutes','settings','push_subs']
   loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);

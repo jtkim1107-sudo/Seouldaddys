@@ -18,6 +18,7 @@ import {
   PackageOpen,
   Settings,
   Smartphone,
+  Wallet,
   X,
 } from "lucide-react";
 import {
@@ -40,6 +41,7 @@ const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?
   { href: "/products", label: "상품마스터", Icon: Package, section: "매출 관리" },
   { href: "/sales", label: "판매 마감", Icon: Banknote },
   { href: "/stock", label: "재고 / 입고", Icon: PackageOpen },
+  { href: "/expenses", label: "지출 / 손익", Icon: Wallet },
   { href: "/partners", label: "거래처정보", Icon: Building2 },
   { href: "/notices", label: "공지사항", Icon: Megaphone, section: "기타" },
   { href: "/activity", label: "활동 기록", Icon: History },
@@ -47,7 +49,7 @@ const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v9.3";
+export const APP_VERSION = "v10.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
