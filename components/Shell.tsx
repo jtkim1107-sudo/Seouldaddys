@@ -49,7 +49,7 @@ const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v10.0";
+export const APP_VERSION = "v10.1";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);

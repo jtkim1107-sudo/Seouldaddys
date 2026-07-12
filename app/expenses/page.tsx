@@ -33,7 +33,10 @@ export default function ExpensesPage() {
   const [memo, setMemo] = useState("");
   const [month, setMonth] = useState(todayStr().slice(0, 7));
 
-  const memberNames = Array.from(new Set([...members.map((m) => m.name), me?.name || ""])).filter(Boolean);
+  // "결제: 나"가 본인을 뜻하므로 목록에서 본인 이름은 제외
+  const memberNames = Array.from(new Set(members.map((m) => m.name)))
+    .filter(Boolean)
+    .filter((n) => n !== me?.name);
   const categories = useMemo(() => {
     const used = expenses.map((e) => e.category).filter(Boolean);
     return Array.from(new Set([...DEFAULT_CATEGORIES, ...used]));

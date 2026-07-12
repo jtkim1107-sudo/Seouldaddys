@@ -142,11 +142,13 @@ export default function TodosPage() {
           />
           <select className="input w-auto" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">담당: 나</option>
-            {names.map((n) => (
-              <option key={n} value={n}>
-                담당: {n}
-              </option>
-            ))}
+            {names
+              .filter((n) => n !== me?.name)
+              .map((n) => (
+                <option key={n} value={n}>
+                  담당: {n}
+                </option>
+              ))}
           </select>
           <input className="input w-auto num" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
           <button onClick={add} className="btn-primary">
