@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import { insertRow, updateRow, deleteRow, getCurrentUser, logActivity } from "@/lib/db";
-import { useAdmin } from "@/lib/useAdmin";
 import { TABLES, type Todo, type TodoStatus, type Member } from "@/lib/types";
 import { initialOf } from "@/components/Shell";
 
@@ -26,7 +25,6 @@ const VIEW_KEY = "seouldaddys_todo_view";
 export default function TodosPage() {
   const { rows: todos } = useTable<Todo>(TABLES.todos);
   const { rows: members } = useTable<Member>(TABLES.members, true);
-  const { isAdmin } = useAdmin();
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -239,15 +237,13 @@ export default function TodosPage() {
                           {t.due && <span className="num text-[11px] text-stone-400">~{t.due.slice(5)}</span>}
                         </div>
                       </div>
-                      {isAdmin && (
-                        <button
-                          onClick={() => remove(t)}
-                          className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="삭제"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => remove(t)}
+                        className="text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="삭제"
+                      >
+                        <X size={14} />
+                      </button>
                     </div>
                   ))}
                   {list.length === 0 && (
@@ -293,11 +289,9 @@ export default function TodosPage() {
                           </option>
                         ))}
                       </select>
-                      {isAdmin && (
-                        <button onClick={() => remove(t)} className="text-stone-300 hover:text-red-500" aria-label="삭제">
-                          <X size={14} />
-                        </button>
-                      )}
+                      <button onClick={() => remove(t)} className="text-stone-300 hover:text-red-500" aria-label="삭제">
+                        <X size={14} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -367,15 +361,13 @@ export default function TodosPage() {
                               <ChevronRight size={13} />
                             </button>
                           )}
-                          {isAdmin && (
-                            <button
-                              onClick={() => remove(t)}
-                              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-stone-300 hover:text-red-500"
-                              aria-label="삭제"
-                            >
-                              <X size={13} />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => remove(t)}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-stone-300 hover:text-red-500"
+                            aria-label="삭제"
+                          >
+                            <X size={13} />
+                          </button>
                         </div>
                       </div>
                     </div>
