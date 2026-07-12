@@ -13,9 +13,11 @@ import {
   ListTodo,
   Megaphone,
   Menu,
+  Monitor,
   Package,
   PackageOpen,
   Settings,
+  Smartphone,
   X,
 } from "lucide-react";
 import {
@@ -45,7 +47,7 @@ const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v9.1";
+export const APP_VERSION = "v9.2";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -133,15 +135,25 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [forceMobile, setForceMobile] = useState(false); // 모바일 화면 강제 모드
 
   useEffect(() => {
     const u = getCurrentUser();
     setUser(u);
     setReady(true);
+    setForceMobile(localStorage.getItem("seouldaddys_force_mobile") === "1");
     // 명단 등록이 누락된 경우 자동 복구 (앱을 열 때마다 확인)
     if (u) ensureMember(u.name, u.emoji || "");
     return subscribeUser(() => setUser(getCurrentUser()));
   }, []);
+
+  function toggleForceMobile() {
+    const next = !forceMobile;
+    setForceMobile(next);
+    if (next) localStorage.setItem("seouldaddys_force_mobile", "1");
+    else localStorage.removeItem("seouldaddys_force_mobile");
+    setMenuOpen(false);
+  }
 
   useEffect(() => {
     setMenuOpen(false);
@@ -157,10 +169,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     );
 
   return (
-    <div className="min-h-screen md:flex">
+    <div className={`min-h-screen md:flex ${forceMobile ? "force-mobile" : ""}`}>
       {/* 모바일 상단바 */}
       <div
-        className="md:hidden sticky top-0 z-20 text-white flex items-center justify-between px-4 py-3"
+        className="m-topbar md:hidden sticky top-0 z-20 text-white flex items-center justify-between px-4 py-3"
         style={{ background: "var(--bg-sidebar)" }}
       >
         <div className="font-extrabold tracking-[-0.4px]">
@@ -173,9 +185,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {/* 사이드바 */}
       <aside
-        className={`${
-          menuOpen ? "block" : "hidden"
-        } md:flex md:flex-col w-full md:w-56 md:min-h-screen md:sticky md:top-0 md:h-screen flex-shrink-0`}
+        className={`side-menu ${menuOpen ? "block is-open" : "hidden"} md:flex md:flex-col w-full md:w-56 md:min-h-screen md:sticky md:top-0 md:h-screen flex-shrink-0`}
         style={{ background: "var(--bg-sidebar)" }}
       >
         <div className="hidden md:block px-5 pt-6 pb-5">
@@ -216,7 +226,25 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="px-4 py-4 border-t border-white/10">
+        <div className="px-4 py-4 border-t border-white/10 space-y-3">
+          {/* 화면 모드 전환 */}
+          <button
+            onClick={toggleForceMobile}
+            className="w-full flex items-center gap-2 rounded-[10px] px-3 h-8 text-xs font-semibold text-stone-400 hover:text-white transition-colors"
+            style={{ background: "var(--bg-sidebar-hover)" }}
+          >
+            {forceMobile ? (
+              <>
+                <Monitor size={14} strokeWidth={1.75} />
+                PC 화면으로 보기
+              </>
+            ) : (
+              <>
+                <Smartphone size={14} strokeWidth={1.75} />
+                모바일 화면으로 보기
+              </>
+            )}
+          </button>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-sm">
               <span className="avatar h-7 w-7 text-xs" style={{ background: "#211d1a", color: "#d6d3d1" }}>
@@ -242,7 +270,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {/* 모바일 하단 탭바 */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t"
+        className="m-tabbar md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t"
         style={{
           background: "var(--bg-card)",
           borderColor: "var(--border-soft)",

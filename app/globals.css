@@ -82,3 +82,38 @@ body {
     @apply inline-flex items-center justify-center rounded-full bg-stone-100 text-stone-600 font-bold flex-shrink-0;
   }
 }
+
+/* ---------- 모바일 화면 강제 모드 ----------
+   넓은 화면(또는 데스크톱 사이트 모드 폰)에서도 모바일 레이아웃으로 보이게 한다 */
+.force-mobile {
+  display: block !important; /* md:flex 해제 — 상단바가 세로로 깨지는 것 방지 */
+}
+.force-mobile .side-menu {
+  display: none !important;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.force-mobile .side-menu.is-open {
+  display: block !important;
+}
+.force-mobile .m-topbar {
+  display: flex !important;
+}
+.force-mobile .m-tabbar {
+  display: flex !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+}
+.force-mobile main {
+  max-width: 560px !important;
+  padding-bottom: 6rem !important;
+}
+/* 다열 그리드를 한 줄로 (달력의 7열 그리드는 제외) */
+.force-mobile main .grid:not(.grid-cols-7) {
+  grid-template-columns: 1fr !important;
+}
