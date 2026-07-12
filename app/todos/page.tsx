@@ -49,7 +49,7 @@ export default function TodosPage() {
   // (내보낸 팀원은 완료된 할 일만 남아 있으면 보드에 나타나지 않는다)
   const names = Array.from(
     new Set([
-      ...members.map((m) => m.name),
+      ...members.filter((m) => m.approved !== false).map((m) => m.name),
       ...todos.filter((t) => t.status !== "done").map((t) => t.assignee).filter(Boolean),
       me?.name || "",
     ])

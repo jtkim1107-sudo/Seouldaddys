@@ -31,7 +31,9 @@ import {
   listRows,
   type CurrentUser,
 } from "@/lib/db";
-import type { Setting } from "@/lib/types";
+import { useTable } from "@/lib/useTable";
+import { useAdmin } from "@/lib/useAdmin";
+import { TABLES, type Setting, type Member } from "@/lib/types";
 
 const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?: string }[] = [
   { href: "/", label: "대시보드", Icon: LayoutDashboard },
@@ -49,7 +51,7 @@ const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?
 ];
 
 // 배포 확인용 버전 (업데이트 때마다 올림)
-export const APP_VERSION = "v10.1";
+export const APP_VERSION = "v11.0";
 
 export function initialOf(name: string): string {
   return (name || "?").trim().slice(0, 1);
@@ -132,12 +134,42 @@ function LoginScreen() {
   );
 }
 
+// 관리자 승인 대기 화면 (승인되면 자동 입장)
+function WaitingScreen({ name, adminName }: { name: string; adminName: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="card w-full max-w-sm p-8 text-center" style={{ boxShadow: "var(--shadow-pop)" }}>
+        <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
+          <span className="h-3 w-3 rounded-full bg-amber-500 animate-pulse" />
+        </div>
+        <h1 className="text-xl font-extrabold tracking-[-0.4px]">승인 대기 중</h1>
+        <p className="text-sm text-stone-500 mt-2 leading-relaxed">
+          <b>{name}</b>님의 입장 요청이 접수됐습니다.
+          <br />
+          관리자{adminName ? `(${adminName})` : ""}가 승인하면 자동으로 입장됩니다.
+        </p>
+        <p className="text-xs text-stone-400 mt-3">이 화면을 켜둔 채 기다리시면 됩니다.</p>
+        <button
+          onClick={() => setCurrentUser(null)}
+          className="btn-ghost w-full justify-center mt-6"
+        >
+          다른 이름으로 입장
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [forceMobile, setForceMobile] = useState(false); // 모바일 화면 강제 모드
+
+  // 승인 상태 확인 (실시간 — 승인되면 자동 입장)
+  const { rows: memberRows, loading: membersLoading } = useTable<Member>(TABLES.members, true);
+  const { adminName } = useAdmin();
 
   useEffect(() => {
     const u = getCurrentUser();
@@ -169,6 +201,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <LoginScreen />
       </>
     );
+
+  // 관리자 승인 대기 중이면 앱 대신 대기 화면
+  const myRow = memberRows.find((m) => m.name === user.name);
+  if (!membersLoading && myRow && myRow.approved === false) {
+    return <WaitingScreen name={user.name} adminName={adminName} />;
+  }
 
   return (
     <div className={`min-h-screen md:flex ${forceMobile ? "force-mobile" : ""}`}>

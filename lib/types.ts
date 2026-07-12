@@ -2,6 +2,7 @@ export interface Member {
   id: string;
   name: string;
   emoji: string;
+  approved?: boolean; // false = 관리자 승인 대기 (예전 데이터에는 없음 = 승인됨)
   created_at: string;
 }
 

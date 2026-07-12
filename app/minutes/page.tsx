@@ -22,7 +22,7 @@ export default function MinutesPage() {
   const [content, setContent] = useState("");
 
   const sorted = [...minutes].sort((a, b) => b.date.localeCompare(a.date));
-  const allNames = members.map((m) => m.name).join(", ");
+  const allNames = members.filter((m) => m.approved !== false).map((m) => m.name).join(", ");
 
   function openNew() {
     setEditing(null);

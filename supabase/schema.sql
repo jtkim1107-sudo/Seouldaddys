@@ -6,9 +6,13 @@ create extension if not exists "pgcrypto";
 create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  emoji text not null default '👨',
+  emoji text not null default '',
+  approved boolean not null default false, -- 관리자 승인제
   created_at timestamptz not null default now()
 );
+-- 기존 팀원은 승인 상태로 두고, 앞으로 새 등록은 기본 '대기'
+alter table members add column if not exists approved boolean not null default true;
+alter table members alter column approved set default false;
 
 create table if not exists todos (
   id uuid primary key default gen_random_uuid(),

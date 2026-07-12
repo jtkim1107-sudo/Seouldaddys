@@ -231,15 +231,21 @@ export function subscribeTable(table: TableName, onChange: () => void): () => vo
 
 // ---------- 멤버 등록 ----------
 
-type MemberRow = { id: string; name: string; emoji: string; created_at: string };
+type MemberRow = { id: string; name: string; emoji: string; approved?: boolean; created_at: string };
+type SettingRow = { id: string; key: string; value: string; created_at: string };
 
-// 입장 시 멤버 명단에 자동 등록 (이미 있으면 아이콘만 갱신)
+// 입장 시 멤버 명단에 자동 등록
+// 관리자가 지정되어 있으면 새 이름은 '승인 대기'로 등록된다 (관리자 승인제)
 export async function ensureMember(name: string, emoji: string): Promise<void> {
   try {
     const members = await listRows<MemberRow>("members");
     const existing = members.find((m) => m.name === name);
     if (!existing) {
-      await insertRow<MemberRow>("members", { name, emoji });
+      const settings = await listRows<SettingRow>("settings");
+      const adminSet = settings.some((s) => s.key === "admin_name" && s.value);
+      // 첫 입장자이거나 관리자가 아직 없으면 자동 승인, 아니면 승인 대기
+      const approved = members.length === 0 || !adminSet;
+      await insertRow<MemberRow>("members", { name, emoji, approved });
     } else if (existing.emoji !== emoji) {
       await updateRow<MemberRow>("members", existing.id, { emoji });
     }

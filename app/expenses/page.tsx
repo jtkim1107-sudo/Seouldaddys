@@ -34,7 +34,7 @@ export default function ExpensesPage() {
   const [month, setMonth] = useState(todayStr().slice(0, 7));
 
   // "결제: 나"가 본인을 뜻하므로 목록에서 본인 이름은 제외
-  const memberNames = Array.from(new Set(members.map((m) => m.name)))
+  const memberNames = Array.from(new Set(members.filter((m) => m.approved !== false).map((m) => m.name)))
     .filter(Boolean)
     .filter((n) => n !== me?.name);
   const categories = useMemo(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Download, Lock, ShieldCheck, UserMinus, Users } from "lucide-react";
+import { Bell, Download, Lock, ShieldCheck, UserMinus, UserRound, Users } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import {
   insertRow,
@@ -13,8 +13,33 @@ import {
   getCurrentUser,
 } from "@/lib/db";
 import { pushSupported, getSubscription, enablePush, disablePush } from "@/lib/push";
+import { setCurrentUser } from "@/lib/db";
 import { initialOf } from "@/components/Shell";
-import { TABLES, type Setting, type Member, type Todo, type Message, type Activity } from "@/lib/types";
+import {
+  TABLES,
+  type Setting,
+  type Member,
+  type Todo,
+  type Message,
+  type Activity,
+  type TableName,
+} from "@/lib/types";
+
+// 이름 변경 시 함께 바꿔야 하는 기록들
+const RENAME_TARGETS: { table: TableName; fields: string[] }[] = [
+  { table: TABLES.todos, fields: ["assignee"] },
+  { table: TABLES.events, fields: ["author"] },
+  { table: TABLES.notices, fields: ["author"] },
+  { table: TABLES.messages, fields: ["author"] },
+  { table: TABLES.activities, fields: ["user"] },
+  { table: TABLES.partners, fields: ["updated_by"] },
+  { table: TABLES.minutes, fields: ["author", "updated_by"] },
+  { table: TABLES.stock_moves, fields: ["author"] },
+  { table: TABLES.expenses, fields: ["payer", "author"] },
+  { table: TABLES.push_subs, fields: ["name"] },
+];
+
+type AnyRow = { id: string; created_at: string; [k: string]: unknown };
 
 export default function SettingsPage() {
   const { rows: settings, loading } = useTable<Setting>(TABLES.settings);
@@ -106,7 +131,7 @@ export default function SettingsPage() {
   const canManage = !adminRow || adminRow.value === me?.name;
 
   const memberNames = Array.from(
-    new Set([...members.map((m) => m.name), me?.name || ""])
+    new Set([...members.filter((m) => m.approved !== false).map((m) => m.name), me?.name || ""])
   ).filter(Boolean);
 
   async function saveAdmin() {
@@ -162,6 +187,78 @@ export default function SettingsPage() {
       await deleteRow(TABLES.activities, a.id);
     }
     logActivity(`미등록 이름 "${name}" 기록 정리`);
+  }
+
+  // 내 이름 변경 — 모든 기록의 이름을 함께 변경
+  const [newName, setNewName] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
+
+  async function renameMe() {
+    const oldName = me?.name || "";
+    const next = newName.trim();
+    if (!next || next === oldName) return;
+    if (members.some((m) => m.name === next)) {
+      alert("이미 있는 이름입니다. 다른 이름을 써주세요.");
+      return;
+    }
+    if (
+      !confirm(
+        `이름을 "${oldName}" → "${next}"(으)로 바꿀까요?\n할 일·판매·지출 등 모든 기록의 이름이 함께 바뀝니다.`
+      )
+    )
+      return;
+    setRenameBusy(true);
+    try {
+      // 1) 각 기록의 이름 필드 변경
+      for (const { table, fields } of RENAME_TARGETS) {
+        const rows = await listRows<AnyRow>(table);
+        for (const r of rows) {
+          const patch: Record<string, unknown> = {};
+          for (const f of fields) if (r[f] === oldName) patch[f] = next;
+          if (Object.keys(patch).length) await updateRow<AnyRow>(table, r.id, patch);
+        }
+      }
+      // 2) 회의록 참석자 문자열 치환
+      const mins = await listRows<AnyRow>(TABLES.minutes);
+      for (const r of mins) {
+        const at = String(r.attendees || "");
+        if (at.includes(oldName)) {
+          const replaced = at
+            .split(",")
+            .map((s) => (s.trim() === oldName ? next : s.trim()))
+            .join(", ");
+          await updateRow<AnyRow>(TABLES.minutes, r.id, { attendees: replaced });
+        }
+      }
+      // 3) 관리자 지정이 나라면 함께 변경
+      if (adminRow?.value === oldName) {
+        await updateRow<Setting>(TABLES.settings, adminRow.id, { value: next });
+      }
+      // 4) 멤버 명단의 내 이름 변경
+      const myRow = members.find((m) => m.name === oldName);
+      if (myRow) await updateRow<Member>(TABLES.members, myRow.id, { name: next });
+      // 5) 로그인 정보 갱신
+      setCurrentUser({ name: next, emoji: "" });
+      logActivity(`이름 변경: ${oldName} → ${next}`);
+      setNewName("");
+      alert(`이름이 "${next}"(으)로 바뀌었습니다. 모든 기록도 함께 변경됐어요.`);
+    } catch (e) {
+      alert("이름 변경 중 오류가 발생했습니다: " + ((e as Error)?.message || ""));
+    } finally {
+      setRenameBusy(false);
+    }
+  }
+
+  // 가입 승인 / 거절
+  async function approveMember(m: Member) {
+    await updateRow<Member>(TABLES.members, m.id, { approved: true });
+    logActivity(`팀원 "${m.name}" 가입 승인`);
+  }
+
+  async function rejectMember(m: Member) {
+    if (!confirm(`"${m.name}"님의 입장 요청을 거절할까요?`)) return;
+    await deleteRow(TABLES.members, m.id);
+    logActivity(`"${m.name}" 입장 요청 거절`);
   }
 
   // 팀원 내보내기 (퇴사 등) — 미완료 할 일은 담당자 미지정으로 이동
@@ -274,6 +371,30 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* 내 정보 */}
+      <div className="card p-5">
+        <h2 className="section-title flex items-center gap-2 mb-1">
+          <UserRound size={16} strokeWidth={1.75} className="text-stone-500" />
+          내 정보
+        </h2>
+        <p className="text-sm text-stone-500 mb-4">
+          현재 이름: <b>{me?.name}</b> — 이름을 바꾸면 할 일·판매·지출 등 모든 기록의 이름이 함께
+          바뀝니다.
+        </p>
+        <div className="flex gap-2">
+          <input
+            className="input flex-1"
+            placeholder="새 이름"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && renameMe()}
+          />
+          <button onClick={renameMe} disabled={renameBusy} className="btn-primary flex-shrink-0">
+            {renameBusy ? "변경 중..." : "이름 변경"}
+          </button>
+        </div>
+      </div>
+
       {/* 데이터 백업 */}
       <div className="card p-5">
         <h2 className="section-title flex items-center gap-2 mb-1">
@@ -342,14 +463,20 @@ export default function SettingsPage() {
           <div className="space-y-1.5">
             {members.map((m) => {
               const isAdminMember = adminRow?.value === m.name;
+              const pending = m.approved === false;
               return (
                 <div
                   key={m.id}
                   className="flex items-center gap-2.5 rounded-[10px] border px-3 py-2"
-                  style={{ borderColor: "var(--border-soft)" }}
+                  style={pending ? { borderColor: "#fcd34d", background: "#fffbeb" } : { borderColor: "var(--border-soft)" }}
                 >
                   <span className="avatar h-7 w-7 text-xs">{initialOf(m.name)}</span>
                   <span className="text-sm font-semibold">{m.name}</span>
+                  {pending && (
+                    <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                      승인 대기
+                    </span>
+                  )}
                   {isAdminMember && (
                     <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700">
                       관리자
@@ -360,14 +487,33 @@ export default function SettingsPage() {
                       나
                     </span>
                   )}
-                  {canManage && !isAdminMember && m.name !== me?.name && (
-                    <button
-                      onClick={() => removeMember(m)}
-                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
-                    >
-                      <UserMinus size={13} strokeWidth={1.75} />
-                      내보내기
-                    </button>
+                  {pending && canManage ? (
+                    <span className="ml-auto flex gap-2">
+                      <button
+                        onClick={() => approveMember(m)}
+                        className="rounded-md bg-brand-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-600 transition-colors"
+                      >
+                        승인
+                      </button>
+                      <button
+                        onClick={() => rejectMember(m)}
+                        className="rounded-md bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-100 transition-colors"
+                      >
+                        거절
+                      </button>
+                    </span>
+                  ) : (
+                    canManage &&
+                    !isAdminMember &&
+                    m.name !== me?.name && (
+                      <button
+                        onClick={() => removeMember(m)}
+                        className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
+                      >
+                        <UserMinus size={13} strokeWidth={1.75} />
+                        내보내기
+                      </button>
+                    )
                   )}
                 </div>
               );
