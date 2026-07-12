@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Download, Lock, ShieldCheck, UserMinus, UserRound, Users } from "lucide-react";
+import { Bell, Download, Lock, Pencil, ShieldCheck, UserMinus, UserRound, Users } from "lucide-react";
 import { useTable } from "@/lib/useTable";
 import {
   insertRow,
@@ -193,6 +193,38 @@ export default function SettingsPage() {
   const [newName, setNewName] = useState("");
   const [renameBusy, setRenameBusy] = useState(false);
 
+  // 모든 기록에서 이름을 일괄 변경하는 공용 로직
+  async function renameEverywhere(oldName: string, next: string) {
+    // 1) 각 기록의 이름 필드 변경
+    for (const { table, fields } of RENAME_TARGETS) {
+      const rows = await listRows<AnyRow>(table);
+      for (const r of rows) {
+        const patch: Record<string, unknown> = {};
+        for (const f of fields) if (r[f] === oldName) patch[f] = next;
+        if (Object.keys(patch).length) await updateRow<AnyRow>(table, r.id, patch);
+      }
+    }
+    // 2) 회의록 참석자 문자열 치환
+    const mins = await listRows<AnyRow>(TABLES.minutes);
+    for (const r of mins) {
+      const at = String(r.attendees || "");
+      if (at.includes(oldName)) {
+        const replaced = at
+          .split(",")
+          .map((s) => (s.trim() === oldName ? next : s.trim()))
+          .join(", ");
+        await updateRow<AnyRow>(TABLES.minutes, r.id, { attendees: replaced });
+      }
+    }
+    // 3) 관리자 지정 이름이면 함께 변경
+    if (adminRow?.value === oldName) {
+      await updateRow<Setting>(TABLES.settings, adminRow.id, { value: next });
+    }
+    // 4) 멤버 명단의 이름 변경
+    const row = members.find((m) => m.name === oldName);
+    if (row) await updateRow<Member>(TABLES.members, row.id, { name: next });
+  }
+
   async function renameMe() {
     const oldName = me?.name || "";
     const next = newName.trim();
@@ -209,39 +241,41 @@ export default function SettingsPage() {
       return;
     setRenameBusy(true);
     try {
-      // 1) 각 기록의 이름 필드 변경
-      for (const { table, fields } of RENAME_TARGETS) {
-        const rows = await listRows<AnyRow>(table);
-        for (const r of rows) {
-          const patch: Record<string, unknown> = {};
-          for (const f of fields) if (r[f] === oldName) patch[f] = next;
-          if (Object.keys(patch).length) await updateRow<AnyRow>(table, r.id, patch);
-        }
-      }
-      // 2) 회의록 참석자 문자열 치환
-      const mins = await listRows<AnyRow>(TABLES.minutes);
-      for (const r of mins) {
-        const at = String(r.attendees || "");
-        if (at.includes(oldName)) {
-          const replaced = at
-            .split(",")
-            .map((s) => (s.trim() === oldName ? next : s.trim()))
-            .join(", ");
-          await updateRow<AnyRow>(TABLES.minutes, r.id, { attendees: replaced });
-        }
-      }
-      // 3) 관리자 지정이 나라면 함께 변경
-      if (adminRow?.value === oldName) {
-        await updateRow<Setting>(TABLES.settings, adminRow.id, { value: next });
-      }
-      // 4) 멤버 명단의 내 이름 변경
-      const myRow = members.find((m) => m.name === oldName);
-      if (myRow) await updateRow<Member>(TABLES.members, myRow.id, { name: next });
-      // 5) 로그인 정보 갱신
+      await renameEverywhere(oldName, next);
       setCurrentUser({ name: next, emoji: "" });
       logActivity(`이름 변경: ${oldName} → ${next}`);
       setNewName("");
       alert(`이름이 "${next}"(으)로 바뀌었습니다. 모든 기록도 함께 변경됐어요.`);
+    } catch (e) {
+      alert("이름 변경 중 오류가 발생했습니다: " + ((e as Error)?.message || ""));
+    } finally {
+      setRenameBusy(false);
+    }
+  }
+
+  // 관리자가 다른 팀원 이름 변경
+  async function renameOther(m: Member) {
+    const input = prompt(`"${m.name}"님의 새 이름을 입력해주세요.`, m.name);
+    if (input === null) return;
+    const next = input.trim();
+    if (!next || next === m.name) return;
+    if (members.some((x) => x.name === next)) {
+      alert("이미 있는 이름입니다. 다른 이름을 써주세요.");
+      return;
+    }
+    if (
+      !confirm(
+        `"${m.name}" → "${next}"(으)로 바꿀까요?\n모든 기록의 이름이 함께 바뀝니다.\n\n변경 후 ${m.name}님 기기에서는 '변경'을 눌러 새 이름(${next})으로 다시 입장해야 합니다.`
+      )
+    )
+      return;
+    setRenameBusy(true);
+    try {
+      await renameEverywhere(m.name, next);
+      logActivity(`팀원 이름 변경: ${m.name} → ${next}`);
+      alert(
+        `변경 완료!\n${next}님께 알려주세요: 앱에서 '변경' 버튼을 눌러 "${next}" 이름으로 다시 입장하면 됩니다.`
+      );
     } catch (e) {
       alert("이름 변경 중 오류가 발생했습니다: " + ((e as Error)?.message || ""));
     } finally {
@@ -504,15 +538,26 @@ export default function SettingsPage() {
                     </span>
                   ) : (
                     canManage &&
-                    !isAdminMember &&
                     m.name !== me?.name && (
-                      <button
-                        onClick={() => removeMember(m)}
-                        className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
-                      >
-                        <UserMinus size={13} strokeWidth={1.75} />
-                        내보내기
-                      </button>
+                      <span className="ml-auto flex gap-2.5">
+                        <button
+                          onClick={() => renameOther(m)}
+                          disabled={renameBusy}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-brand-600 transition-colors"
+                        >
+                          <Pencil size={12} strokeWidth={1.75} />
+                          이름 변경
+                        </button>
+                        {!isAdminMember && (
+                          <button
+                            onClick={() => removeMember(m)}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-red-500 transition-colors"
+                          >
+                            <UserMinus size={13} strokeWidth={1.75} />
+                            내보내기
+                          </button>
+                        )}
+                      </span>
                     )
                   )}
                 </div>
