@@ -13,6 +13,7 @@ export interface Todo {
   status: TodoStatus;
   assignee: string; // 멤버 이름
   due: string; // YYYY-MM-DD, 없으면 ""
+  memo?: string; // 설명 (예전 데이터에는 없을 수 있음)
   created_at: string;
 }
 

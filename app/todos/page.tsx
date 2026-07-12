@@ -28,6 +28,7 @@ export default function TodosPage() {
   const { rows: members } = useTable<Member>(TABLES.members, true);
   const { isAdmin } = useAdmin();
   const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
   const [assignee, setAssignee] = useState("");
   const [due, setDue] = useState("");
   const [view, setView] = useState<ViewMode>("member");
@@ -62,10 +63,19 @@ export default function TodosPage() {
       status: "todo",
       assignee: who,
       due,
+      memo: desc.trim(),
     });
     logActivity(`할 일 "${title.trim()}" 등록 (담당: ${who || "미지정"})`);
     setTitle("");
+    setDesc("");
     setDue("");
+  }
+
+  // 설명 수정 (간단 입력창)
+  async function editMemo(t: Todo) {
+    const v = prompt(`"${t.title}" 설명을 입력해주세요.`, t.memo || "");
+    if (v === null) return;
+    await updateRow<Todo>(TABLES.todos, t.id, { memo: v.trim() });
   }
 
   async function moveTo(t: Todo, status: TodoStatus) {
@@ -121,27 +131,36 @@ export default function TodosPage() {
       </div>
 
       {/* 추가 폼 */}
-      <div className="card p-3.5 flex flex-wrap gap-2">
+      <div className="card p-3.5 space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <input
+            className="input flex-1 min-w-[200px]"
+            placeholder="새 할 일 입력"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+          />
+          <select className="input w-auto" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+            <option value="">담당: 나</option>
+            {names.map((n) => (
+              <option key={n} value={n}>
+                담당: {n}
+              </option>
+            ))}
+          </select>
+          <input className="input w-auto num" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+          <button onClick={add} className="btn-primary">
+            <Plus size={16} strokeWidth={2} />
+            추가
+          </button>
+        </div>
         <input
-          className="input flex-1 min-w-[200px]"
-          placeholder="새 할 일 입력"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          className="input"
+          placeholder="설명 (선택) — 상세 내용, 참고 링크 등"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
         />
-        <select className="input w-auto" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-          <option value="">담당: 나</option>
-          {names.map((n) => (
-            <option key={n} value={n}>
-              담당: {n}
-            </option>
-          ))}
-        </select>
-        <input className="input w-auto num" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-        <button onClick={add} className="btn-primary">
-          <Plus size={16} strokeWidth={2} />
-          추가
-        </button>
       </div>
 
       {view === "member" ? (
@@ -190,6 +209,11 @@ export default function TodosPage() {
                         >
                           {t.title}
                         </div>
+                        {t.memo && (
+                          <div className="text-xs text-stone-400 mt-0.5 whitespace-pre-wrap break-words">
+                            {t.memo}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1.5">
                           <span
                             className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${STATUS_BADGE[t.status].cls}`}
@@ -204,6 +228,12 @@ export default function TodosPage() {
                               {t.status === "todo" ? "진행 시작" : "대기로"}
                             </button>
                           )}
+                          <button
+                            onClick={() => editMemo(t)}
+                            className="text-[11px] font-medium text-stone-400 hover:text-brand-600 transition-colors"
+                          >
+                            {t.memo ? "설명 수정" : "설명 추가"}
+                          </button>
                           {t.due && <span className="num text-[11px] text-stone-400">~{t.due.slice(5)}</span>}
                         </div>
                       </div>
@@ -299,6 +329,11 @@ export default function TodosPage() {
                       >
                         {t.title}
                       </div>
+                      {t.memo && (
+                        <div className="text-xs text-stone-400 mt-0.5 whitespace-pre-wrap break-words">
+                          {t.memo}
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1.5 text-xs text-stone-500">
                           {t.assignee && (

@@ -16,8 +16,10 @@ create table if not exists todos (
   status text not null default 'todo', -- todo | doing | done
   assignee text not null default '',
   due text not null default '',
+  memo text not null default '', -- 설명
   created_at timestamptz not null default now()
 );
+alter table todos add column if not exists memo text not null default '';
 
 create table if not exists messages (
   id uuid primary key default gen_random_uuid(),
