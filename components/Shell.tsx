@@ -33,6 +33,7 @@ import {
 } from "@/lib/db";
 import { useTable } from "@/lib/useTable";
 import { useAdmin } from "@/lib/useAdmin";
+import { syncPush } from "@/lib/push";
 import { TABLES, type Setting, type Member } from "@/lib/types";
 
 const NAV: { href: string; label: string; Icon: typeof LayoutDashboard; section?: string }[] = [
@@ -178,6 +179,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     setForceMobile(localStorage.getItem("seouldaddys_force_mobile") === "1");
     // 명단 등록이 누락된 경우 자동 복구 (앱을 열 때마다 확인)
     if (u) ensureMember(u.name, u.emoji || "");
+    // 알림 구독이 끊어졌으면 자동 재연결 (앱을 열 때마다 확인)
+    if (u) syncPush();
     return subscribeUser(() => setUser(getCurrentUser()));
   }, []);
 

@@ -89,26 +89,37 @@ export async function GET(req: NextRequest) {
   if (subErr) return NextResponse.json({ error: subErr.message }, { status: 500 });
 
   let sent = 0;
-  const results = await Promise.allSettled(
+  let expired = 0;
+  const errors: string[] = [];
+  await Promise.allSettled(
     (subs || []).map(async (row: { id: string; sub: webpush.PushSubscription }) => {
       try {
-        await webpush.sendNotification(row.sub, payload);
+        await webpush.sendNotification(row.sub, payload, { TTL: 12 * 3600 });
         sent++;
       } catch (e) {
         const status = (e as { statusCode?: number })?.statusCode;
         if (status === 404 || status === 410) {
+          // 만료된 구독 → 정리 (기기에서 앱을 다시 열면 자동 재구독됨)
+          expired++;
           await db.from("push_subs").delete().eq("id", row.id);
+        } else if (status === 401 || status === 403) {
+          errors.push(
+            `발송 인증 실패(${status}): VAPID_PRIVATE_KEY가 공개 키와 짝이 맞는지 확인해주세요.`
+          );
+        } else {
+          errors.push(`발송 실패(${status || "?"}): ${(e as Error)?.message || ""}`);
         }
-        throw e;
       }
     })
   );
-  const failed = results.filter((r) => r.status === "rejected").length;
 
   return NextResponse.json({
     ok: true,
     sent,
-    failed,
+    failed: errors.length,
+    expired,
+    total: (subs || []).length,
+    errors: errors.slice(0, 3),
     events: todays.length,
     dueToday: dueToday.length,
     overdue: overdue.length,

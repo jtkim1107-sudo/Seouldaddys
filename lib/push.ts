@@ -1,8 +1,7 @@
 "use client";
 
 // 폰 푸시 알림 구독 관리 (홈 화면에 설치한 앱에서 동작)
-import { listRows, insertRow, deleteRow, getCurrentUser } from "./db";
-import type { PushSub } from "./types";
+import { getCurrentUser } from "./db";
 
 // VAPID 공개 키 (비밀 아님 — 서버의 비밀 키와 짝을 이룸)
 export const VAPID_PUBLIC_KEY =
@@ -33,6 +32,20 @@ export async function getSubscription(): Promise<PushSubscription | null> {
   return reg.pushManager.getSubscription();
 }
 
+// 구독을 서버에 저장 (같은 기기의 이전 기록은 서버가 정리)
+async function saveToServer(sub: PushSubscription, oldEndpoint?: string): Promise<void> {
+  const user = getCurrentUser();
+  const res = await fetch("/api/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: user?.name || "", sub: sub.toJSON(), oldEndpoint }),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => null);
+    throw new Error(json?.error || "구독 저장에 실패했습니다.");
+  }
+}
+
 // 알림 켜기: 권한 요청 → 구독 → 서버(DB)에 저장
 export async function enablePush(): Promise<void> {
   if (!pushSupported()) throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
@@ -44,26 +57,42 @@ export async function enablePush(): Promise<void> {
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
   });
-  const user = getCurrentUser();
-  const json = sub.toJSON();
-  // 같은 기기(endpoint) 중복 저장 방지
-  const existing = await listRows<PushSub>("push_subs");
-  if (!existing.some((s) => s.sub?.endpoint === json.endpoint)) {
-    await insertRow<PushSub>("push_subs", {
-      name: user?.name || "",
-      sub: json as PushSub["sub"],
-    });
-  }
+  await saveToServer(sub);
 }
 
-// 알림 끄기: 구독 해제 + DB에서 제거
+// 알림 끄기: 구독 해제 + 서버에서 제거
 export async function disablePush(): Promise<void> {
   const sub = await getSubscription();
   if (!sub) return;
   const endpoint = sub.endpoint;
   await sub.unsubscribe();
-  const existing = await listRows<PushSub>("push_subs");
-  for (const s of existing) {
-    if (s.sub?.endpoint === endpoint) await deleteRow("push_subs", s.id);
+  await fetch("/api/subscribe", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint }),
+  }).catch(() => {});
+}
+
+// 앱을 열 때마다 구독 상태를 서버와 다시 맞춘다 (자동 복구)
+// - 브라우저가 구독 주소를 바꿨거나(iOS에서 흔함) 서버 기록이 사라졌어도
+//   권한이 이미 허용돼 있으면 조용히 다시 구독하고 저장한다
+export async function syncPush(): Promise<void> {
+  try {
+    if (!pushSupported()) return;
+    if (Notification.permission !== "granted") return;
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      // 권한은 있는데 구독이 사라진 상태 → 다시 구독 (권한 팝업 없이 됨)
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+      });
+    }
+    await saveToServer(sub);
+  } catch (e) {
+    // 자동 복구는 실패해도 앱 사용에 지장 없도록 조용히 넘어간다
+    console.error("푸시 구독 동기화 실패", e);
   }
 }

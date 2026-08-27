@@ -12,7 +12,7 @@ import {
   isSharedMode,
   getCurrentUser,
 } from "@/lib/db";
-import { pushSupported, getSubscription, enablePush, disablePush } from "@/lib/push";
+import { pushSupported, getSubscription, enablePush, disablePush, syncPush } from "@/lib/push";
 import { setCurrentUser } from "@/lib/db";
 import { initialOf } from "@/components/Shell";
 import {
@@ -58,7 +58,9 @@ export default function SettingsPage() {
       setPushState("unsupported");
       return;
     }
-    getSubscription()
+    // 서버 기록이 사라졌어도 다시 저장되도록 먼저 동기화한 뒤 상태 표시
+    syncPush()
+      .then(() => getSubscription())
       .then((s) => setPushState(Boolean(s)))
       .catch(() => setPushState(false));
   }, []);
@@ -116,7 +118,20 @@ export default function SettingsPage() {
       const res = await fetch("/api/notify?test=1");
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "발송 실패");
-      alert(`테스트 알림을 ${json.sent}개 기기로 보냈습니다. 잠시 후 알림을 확인해보세요.`);
+      if (json.total === 0) {
+        alert(
+          "등록된 알림 기기가 없습니다. '이 기기 알림 끄기' 후 다시 '알림 켜기'를 눌러주세요."
+        );
+      } else if (json.sent === 0) {
+        alert(
+          `발송에 실패했습니다 (기기 ${json.total}개 중 0개 성공).\n` +
+            (json.errors?.length
+              ? json.errors.join("\n")
+              : "기기의 알림 구독이 만료됐습니다. 앱을 다시 열면 자동으로 재연결됩니다.")
+        );
+      } else {
+        alert(`테스트 알림을 ${json.sent}개 기기로 보냈습니다. 잠시 후 알림을 확인해보세요.`);
+      }
     } catch (e) {
       alert("테스트 발송 실패: " + ((e as Error)?.message || ""));
     } finally {
